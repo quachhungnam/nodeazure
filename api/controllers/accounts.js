@@ -142,35 +142,46 @@ exports.account_login = (req, res, next) => {
           message: "Auth failed",
         });
       }
-      bcrypt.compare(req.body.password, account[0].password, (err, result) => {
-        if (err) {
-          return res.status(401).json({
-            success: false,
-            message: "Auth failed",
-          });
-        }
-        if (result) {
-          const token = jwt.sign(
-            {
-              username: account[0].username,
-              accountId: account[0]._id,
-            },
-            process.env.JWT_KEY,
-            {
-              expiresIn: "1h",
+      if (account[0].status == true) {
+        bcrypt.compare(
+          req.body.password,
+          account[0].password,
+          (err, result) => {
+            if (err) {
+              return res.status(401).json({
+                success: false,
+                message: "Auth failed",
+              });
             }
-          );
-          return res.status(200).json({
-            success: true,
-            message: "Auth successful",
-            token: token,
-          });
-        }
-        res.status(401).json({
+            if (result) {
+              const token = jwt.sign(
+                {
+                  username: account[0].username,
+                  accountId: account[0]._id,
+                },
+                process.env.JWT_KEY,
+                {
+                  expiresIn: "1h",
+                }
+              );
+              return res.status(200).json({
+                success: true,
+                message: "Auth successful",
+                token: token,
+              });
+            }
+            res.status(401).json({
+              success: false,
+              message: "Auth failed",
+            });
+          }
+        );
+      } else {
+        res.status(403).json({
           success: false,
-          message: "Auth failed",
+          message: "This account was locked",
         });
-      });
+      }
     })
     .catch((err) => {
       console.log(err);
