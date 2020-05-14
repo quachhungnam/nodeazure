@@ -221,6 +221,34 @@ exports.accounts_update_account = (req, res, next) => {
     });
 };
 
+exports.accounts_update_account_status = (req, res, next) => {
+  const id = req.params.accountId;
+  const updateOps = {
+    status: req.body.status,
+  };
+  updateOps.updated_at = new Date();
+  updateOps.updated_by = id;
+  Account.update({ _id: id }, { $set: updateOps })
+    .exec()
+    .then((result) => {
+      res.status(200).json({
+        success: true,
+        message: "Account status updated",
+        request: {
+          type: "GET",
+          url: "http://localhost:3000/accounts/" + id,
+        },
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({
+        success: false,
+        error: err,
+      });
+    });
+};
+
 exports.accounts_delete_account = (req, res, next) => {
   const id = req.params.accountId;
   Account.remove({ _id: id })

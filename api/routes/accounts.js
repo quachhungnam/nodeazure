@@ -20,6 +20,12 @@ router.patch(
   AccountController.accounts_update_account
 );
 
+router.patch(
+  "/:accountId/status",
+  checkAuth,
+  AccountController.accounts_update_account_status
+);
+
 router.delete(
   "/:accountId",
   checkAuth,
