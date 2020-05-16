@@ -77,11 +77,11 @@ exports.districts_create_district = (req, res, next) => {
 };
 
 exports.districts_get_district = (req, res, next) => {
-  District.findById(req.params.districtId)
+  District.find({ parent_code: req.params.provinceId })
     .select("_id parent_code code name")
     .exec()
     .then((district) => {
-      if (!district) {
+      if (district.length == 0) {
         return res.status(404).json({
           success: false,
           message: "District not found",
@@ -89,11 +89,7 @@ exports.districts_get_district = (req, res, next) => {
       }
       res.status(200).json({
         success: true,
-        district: district,
-        request: {
-          type: "GET",
-          url: "http://localhost:3000/districts",
-        },
+        districts: district,
       });
     })
     .catch((err) => {
