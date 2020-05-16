@@ -5,7 +5,7 @@ const District = require("../models/district");
 
 exports.provinces_get_all = (req, res, next) => {
   Province.find()
-    .select("_id code name")
+    .select("code name")
     .exec()
     .then((docs) => {
       console.log(docs);
@@ -15,12 +15,11 @@ exports.provinces_get_all = (req, res, next) => {
           count: docs.length,
           provinces: docs.map((doc) => {
             return {
-              _id: doc._id,
               code: doc.code,
               name: doc.name,
               request: {
                 type: "GET",
-                url: "http://localhost:3000/provinces/" + doc._id,
+                url: "http://localhost:3000/provinces/" + doc.code,
               },
             };
           }),
@@ -70,15 +69,18 @@ exports.provinces_create_province = (req, res, next) => {
 
 exports.provinces_get_province = (req, res, next) => {
   const id = req.params.provinceId;
-  Province.findById(id)
-    .select("_id code name")
+  Province.find({ code: id })
+    .select("code name")
     .exec()
     .then((doc) => {
-      console.log(doc);
-      if (doc) {
+      if (doc.length != 0) {
+        const province = {
+          name: doc[0].name,
+          code: doc[0].code,
+        };
         res.status(200).json({
           success: true,
-          province: doc,
+          province: province,
           request: {
             type: "GET",
             url: "http://localhost:3000/provinces",
