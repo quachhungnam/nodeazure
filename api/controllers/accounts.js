@@ -53,7 +53,6 @@ exports.accounts_get_account = (req, res, next) => {
     )
     .exec()
     .then((doc) => {
-      console.log(doc);
       if (doc) {
         res.status(200).json({
           success: true,
@@ -195,30 +194,30 @@ exports.account_login = (req, res, next) => {
 exports.accounts_update_account = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {};
-  for (const ops of req.body) {
-    updateOps[ops.propName] = ops.value;
-  }
-  updateOps.updated_at = new Date();
-  updateOps.updated_by = id;
-  Account.update({ _id: id }, { $set: updateOps })
-    .exec()
-    .then((result) => {
-      res.status(200).json({
-        success: true,
-        message: "Account updated",
-        request: {
-          type: "GET",
-          url: "http://localhost:3000/accounts/" + id,
-        },
+  bcrypt.hash(req.body.password, 10, (err, hash) => {
+    updateOps.password = hash;
+    updateOps.updated_at = new Date();
+    updateOps.updated_by = id;
+    Account.update({ _id: id }, { $set: updateOps })
+      .exec()
+      .then((result) => {
+        res.status(200).json({
+          success: true,
+          message: "Account password updated",
+          request: {
+            type: "GET",
+            url: "http://localhost:3000/accounts/" + id,
+          },
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({
+          success: false,
+          error: err,
+        });
       });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({
-        success: false,
-        error: err,
-      });
-    });
+  });
 };
 
 exports.accounts_update_account_status = (req, res, next) => {
