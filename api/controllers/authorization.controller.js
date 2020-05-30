@@ -41,26 +41,31 @@ var checkPermission = (req, res, next) => {
     query["object"] = object;
     query[action_name] = action_value;
     //
-    Account_Role.find({"account_id": req.decoded.userid}).exec()
+    Account_Role.find({"account_id": req.userData.accountId}).exec()
     .then((data) => {
-        account_roleList = data.map((item) => item.role_id);
+        if (data == null) {
+            console.log("vcsjdcj");
+            return res.status(500);
+        }
+        account_roleList = data.map((item) => item.role_id.toString());
+        console.log(query);
         return Permission.findOne(query).exec();
     })
     .then((data) => {
-        if (data) {
+        if (data == null) {
+            console.log("vcsjdcj");
             return res.status(500);
         }
         let perm = data._id;
-        return Role_Permission.find({permission_id: perm}).exec();
+        return Role_Permission.find({"permission_id": perm}).exec();
     })
     .then((data) => {
-        if (data) {
+        if (data ==  null) {
             return res.status(500);
         }
-        roleList = data.map(item => item.role_id);
-        console.log(account_roleList);
-        console.log(roleList);
+        roleList = data.map(item => item.role_id.toString());
         account_roleList.forEach(item => {
+            // console.log(roleList.indexOf(item));
             if (roleList.indexOf(item) > -1) {
                 next();
             }

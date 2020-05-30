@@ -158,7 +158,7 @@ exports.account_login = (req, res, next) => {
                   username: account[0].username,
                   accountId: account[0]._id,
                 },
-                process.env.JWT_KEY,
+                process.env.JWT_KEY || "Secrect",
                 {
                   expiresIn: "1h",
                 }

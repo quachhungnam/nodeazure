@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
 const app = express();
-mongoose.connect(process.env.MONGO_URL, {
+mongoose.connect("mongodb+srv://lotus_dev:lotus123%23%23@cluster0-9glsf.mongodb.net/leb", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   useCreateIndex: true,
@@ -15,6 +15,7 @@ const districtRoutes = require("./api/routes/districts");
 const accountRoutes = require("./api/routes/accounts");
 const userRoutes = require("./api/routes/users");
 const feedbackRoutes = require("./api/routes/feedbacks");
+
 
 app.use(morgan("dev"));
 app.use(bodyParser.urlencoded({ extended: false }));
