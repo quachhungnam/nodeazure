@@ -1,16 +1,16 @@
 const mongoose = require('mongoose')
 
 const Post = require('../models/posts/post_model')
-const Province = require('../models/posts/province_model')
+const Province = require('../models/province')
 // const Status = require('../models/posts/status_model')
-const District = require('../models/posts/district_model')
+const District = require('../models/district')
 const Post_type = require('../models/posts/post_type_model')
-const User = require('../models/users/user_model')
+const Account = require('../models/account')
 
 module.exports.add_post = async (req, res, next) => {
     try {
-        const user = await User.findById(req.body.user)
-        if (!user) {
+        const account = await Account.findById(req.body.account)
+        if (!account) {
             return res.status(404).json({ error: 'user not found' })
         }
         const post_type = await Post_type.findById(req.body.post_type)
@@ -32,7 +32,7 @@ module.exports.add_post = async (req, res, next) => {
         const new_post = new Post({
             _id: mongoose.Types.ObjectId(),
             title: req.body.title,
-            user: req.body.user,
+            account: req.body.account,
             post_type: req.body.post_type,
             province: req.body.province,
             district: req.body.district,
@@ -70,10 +70,11 @@ module.exports.update_post = async (req, res, next) => {
             // console.log(key, value)
             updateOps[key] = value
         }
-        if (updateOps.user) {
-            const user = await User.findById(req.body.user)
-            if (!user) {
-                return res.status(404).json({ error: 'user not found' })
+        //neu 1 account cap nhat post
+        if (updateOps.account) {
+            const account = await Account.findById(req.body.account)
+            if (!account) {
+                return res.status(404).json({ error: 'account not found' })
             }
         }
         if (updateOps.post_type) {
@@ -212,6 +213,7 @@ module.exports.get_all_post = (req, res, next) => {
         })
 }
 
+//get tat cac post dang cho` dang
 module.exports.get_all_post_pendding = (req, res, next) => {
     Post.find({ status: false })
         // .select('title price')
@@ -227,6 +229,7 @@ module.exports.get_all_post_pendding = (req, res, next) => {
             })
         })
 }
+//get tat ca post da dang
 module.exports.get_all_post_is_posting = (req, res, next) => {
     Post.find({ status: "true" })
         // .select('title price')

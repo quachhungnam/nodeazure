@@ -1,7 +1,8 @@
 const mongoose = require('mongoose')
 const Rate = require('../models/posts/rate_model')
-const User = require('../models/users/user_model')
+const Account = require('../models/account')
 const Post = require('../models/posts/post_model')
+//1 user danh' gia bai` post
 
 module.exports.add_rate = async (req, res, next) => {
     try {
@@ -9,8 +10,8 @@ module.exports.add_rate = async (req, res, next) => {
         if (rate.length > 0) {
             return res.status(409).json({ error: 'you must choose again your rate!' })
         }
-        const user = await User.findById(req.body.user)
-        if (!user) {
+        const account = await Account.findById(req.body.account)
+        if (!account) {
             return res.status(409).json({ error: 'user does not exist' })
         }
         const post = await Post.findById(req.body.post)
@@ -20,7 +21,7 @@ module.exports.add_rate = async (req, res, next) => {
         const new_rate = new Rate({
             _id: mongoose.Types.ObjectId(),
             name: req.body.name,
-            user: req.body.user,
+            account: req.body.account,
             post: req.body.post,
             description: req.body.description,
             start: req.body.star,
@@ -55,8 +56,8 @@ module.exports.update_rate = async (req, res, next) => {
         }
 
         if (updateOps.user) {
-            const user = await User.findById(updateOps.user)
-            if (!user) {
+            const account = await Account.findById(updateOps.account)
+            if (!account) {
                 return res.status(404).json({ error: 'user does not exist' })
             }
         }

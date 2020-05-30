@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const Post = require('../models/posts/post_model')
-const User = require('../models/users/user_model')
+const Account = require('../models/account')
 const Transaction = require('../models/posts/transaction_model')
 
 module.exports.add_transaction = async (req, res, next) => {
@@ -10,7 +10,7 @@ module.exports.add_transaction = async (req, res, next) => {
         if (transaction.length > 0) {
             return res.status(409).json({ error: 'transaction exist' })
         }
-        const client = await User.findById(req.body.client)
+        const client = await Account.findById(req.body.client)
         if (!client) {
             return res.status(409).json({ error: 'user does not exist' })
         }
@@ -58,7 +58,7 @@ module.exports.update_transaction = async (req, res, next) => {
             updateOps[key] = value
         }
         if (updateOps.client) {
-            const client = await User.findById(req.body.client)
+            const client = await Account.findById(req.body.client)
             if (!client) {
                 return res.status(409).json({ error: 'client does not exist' })
             }
