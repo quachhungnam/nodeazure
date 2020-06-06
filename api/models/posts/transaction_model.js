@@ -4,7 +4,7 @@ const transaction_schema = mongoose.Schema({
     post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
     client: { type: mongoose.Schema.Types.ObjectId, ref: 'Account' },
     locked: { type: Boolean, default: false },
-    created_at: { type: Date, default: Date().now },
+    created_at: { type: Date, default: new Date()},
     update_at: { type: Date }
 })
 

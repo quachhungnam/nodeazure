@@ -11,7 +11,7 @@ const post_schema = mongoose.Schema({
     hot: { type: Boolean, default: false },
     price: { type: Number, required: true },
     square: { type: Number, min: 4 },
-    address_detail: { type: String },
+    address_detail: { type: String, default: '' },
     description: { type: String, default: '' },
     created_at: { type: Date, default: new Date() },
     updated_at: { type: Date, default: new Date() },

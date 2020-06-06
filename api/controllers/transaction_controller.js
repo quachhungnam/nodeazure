@@ -6,22 +6,25 @@ const Transaction = require('../models/posts/transaction_model')
 
 module.exports.add_transaction = async (req, res, next) => {
     try {
-        const transaction = await Transaction.find({ client: req.body.client, post: req.body.post })
-        if (transaction.length > 0) {
-            return res.status(409).json({ error: 'transaction exist' })
+        const accountID = req.userData.accountId
+        const account = await Account.findById(accountID)
+        if (!account) {
+            return res.status(404).json({ error: 'account not found' })
         }
-        const client = await Account.findById(req.body.client)
-        if (!client) {
-            return res.status(409).json({ error: 'user does not exist' })
-        }
+
         const post = await Post.findById(req.body.post)
         if (!post) {
-            return res.status(409).json({ error: 'post does not exist' })
+            return res.status(404).json({ error: 'post does not exist' })
+        }
+
+        const transaction = await Transaction.find({ client: accountID, post: req.body.post })
+        if (transaction.length > 0) {
+            return res.status(409).json({ error: 'transaction exist' })
         }
 
         const new_transaction = new Transaction({
             _id: mongoose.Types.ObjectId(),
-            client: req.body.client,
+            client: accountID,
             post: req.body.post,
             // locked: false,
             created_at: new Date(),
@@ -47,6 +50,13 @@ module.exports.add_transaction = async (req, res, next) => {
 
 module.exports.update_transaction = async (req, res, next) => {
     try {
+        //thuc ra checkauth ròi khoi check cung duoc
+        const accountID = req.userData.accountId
+        const account = await Account.findById(accountID)
+        if (!account) {
+            return res.status(404).json({ error: 'account not found' })
+        }
+
         const id = req.params.transactionId
         const transaction = Transaction.findById(id)
         if (!transaction) {
@@ -57,20 +67,15 @@ module.exports.update_transaction = async (req, res, next) => {
             // console.log(key, value)
             updateOps[key] = value
         }
-        if (updateOps.client) {
-            const client = await Account.findById(req.body.client)
-            if (!client) {
-                return res.status(409).json({ error: 'client does not exist' })
-            }
-        }
+
         if (updateOps.post) {
             const post = await Post.findById(req.body.post)
             if (!post) {
-                return res.status(409).json({ error: 'post does not exist' })
+                return res.status(404).json({ error: 'post does not exist' })
             }
         }
 
-        Transaction.updateMany({ _id: id }, { $set: updateOps })
+        Transaction.updateMany({ _id: id, client: accountID }, { $set: updateOps })
             .exec()
             .then(result => {
                 // console.log(result)
@@ -89,12 +94,13 @@ module.exports.update_transaction = async (req, res, next) => {
 
 module.exports.delete_transaction = async (req, res, next) => {
     try {
+        const accountID = req.userData.accountId
         const id = req.params.transactionId
         const transaction = await Transaction.findById(id)
         if (!transaction) {
             return res.status(404).json({ error: 'transaction does not exist' })
         }
-        Transaction.deleteOne({ _id: id })
+        Transaction.deleteOne({ _id: id, client: accountID })
             .exec()
             .then(() => {
                 res.status(200).json({
@@ -110,8 +116,10 @@ module.exports.delete_transaction = async (req, res, next) => {
 
 }
 
-module.exports.get_a_transaction = (req, res, next) => {
+module.exports.get_a_transaction = async (req, res, next) => {
     Transaction.findById(req.params.transactionId)
+        .populate({ path: 'client', select: 'username' })
+        .populate({ path: 'post', select: 'title' })
         .exec()
         .then(transaction => {
             if (!transaction) {
@@ -128,8 +136,10 @@ module.exports.get_a_transaction = (req, res, next) => {
         })
 }
 
-module.exports.get_all_transaction = (req, res, next) => {
+module.exports.get_all_transaction = async (req, res, next) => {
     Transaction.find()
+        .populate({ path: 'client', select: 'username' })
+        .populate({ path: 'post', select: 'title' })
         .exec()
         .then(docs => {
             res.status(200).json({

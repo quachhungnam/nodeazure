@@ -6,12 +6,16 @@ const Province = require('../models/province')
 const District = require('../models/district')
 const Post_type = require('../models/posts/post_type_model')
 const Account = require('../models/account')
+const Rate = require('../models/posts/rate_model')
+const Transaction = require('../models/posts/transaction_model')
 
 module.exports.add_post = async (req, res, next) => {
     try {
-        const account = await Account.findById(req.body.account)
+        //get ID_account trong token va kiem tra
+        const accountID = req.userData.accountId
+        const account = await Account.findById(accountID)
         if (!account) {
-            return res.status(404).json({ error: 'user not found' })
+            return res.status(404).json({ error: 'account not found' })
         }
         const post_type = await Post_type.findById(req.body.post_type)
         if (!post_type) {
@@ -32,7 +36,7 @@ module.exports.add_post = async (req, res, next) => {
         const new_post = new Post({
             _id: mongoose.Types.ObjectId(),
             title: req.body.title,
-            account: req.body.account,
+            account: accountID,
             post_type: req.body.post_type,
             province: req.body.province,
             district: req.body.district,
@@ -60,23 +64,25 @@ module.exports.add_post = async (req, res, next) => {
 
 module.exports.update_post = async (req, res, next) => {
     try {
+        //kiem tra user co dang login hay ko
+        const accountID = req.userData.accountId
+        const account = await Account.findById(accountID)
+        if (!account) {
+            return res.status(404).json({ error: 'account not found' })
+        }
+
         const id = req.params.postId
         const post = await Post.findById(id)
         if (!post) {
             return res.status(404).json({ error: 'post not found' })
         }
+
         const updateOps = {}
         for (const [key, value] of Object.entries(req.body)) {
             // console.log(key, value)
             updateOps[key] = value
         }
-        //neu 1 account cap nhat post
-        if (updateOps.account) {
-            const account = await Account.findById(req.body.account)
-            if (!account) {
-                return res.status(404).json({ error: 'account not found' })
-            }
-        }
+
         if (updateOps.post_type) {
             const post_type = await Post_type.findById(req.body.post_type)
             if (!post_type) {
@@ -101,9 +107,9 @@ module.exports.update_post = async (req, res, next) => {
                 return res.status(404).json({ error: 'district not found' })
             }
         }
-
+        //user nao` thi update post cua user do
         updateOps.updated_at = new Date()
-        Post.updateMany({ _id: id }, { $set: updateOps })
+        Post.updateMany({ _id: id, account: accountID }, { $set: updateOps })
             .exec()
             .then(result => {
                 res.status(200).json({
@@ -118,18 +124,25 @@ module.exports.update_post = async (req, res, next) => {
 
     }
 }
+
 module.exports.update_post_status = async (req, res, next) => {
     try {
+        const accountID = req.userData.accountId
+        const account = await Account.findById(accountID)
+        if (!account) {
+            return res.status(404).json({ error: 'account not found' })
+        }
+
         const id = req.params.postId
         const post = await Post.findById(id)
         if (!post) {
             return res.status(404).json({ error: 'post not found' })
         }
+
         const updateOps = {}
         for (const [key, value] of Object.entries(req.body)) {
             updateOps[key] = value
         }
-
 
         updateOps.updated_at = new Date()
         Post.updateMany({ _id: id }, { $set: updateOps })
@@ -150,13 +163,33 @@ module.exports.update_post_status = async (req, res, next) => {
 
 module.exports.delete_post = async (req, res, next) => {
     try {
+        const accountID = req.userData.accountId
         const id = req.params.postId
         const post = await Post.findById(id)
         if (!post) {
             return res.status(404).json({ error: 'post not found' })
         }
-        //kiem tra rate hay transaction??
-        Post.deleteOne({ _id: id })
+        //xoa post cung dong thoi xoa transaction, xoa rate cua post do
+        //xoa cac danh gia cua nguoi dung
+        Rate.deleteMany({ post: id })
+            .exec()
+            .then(result => {
+
+            })
+            .catch(err => {
+                res.status(500).json({ error: err })
+            })
+        //xoa luon hop dong` dang ky lien quan toi post
+        Transaction.deleteOne({ post: id })
+            .exec()
+            .then(() => {
+
+            })
+            .catch(err => {
+                res.status(500).json({ error: err })
+            })
+
+        Post.deleteOne({ _id: id, account: accountID })
             .exec()
             .then(() => {
                 res.status(200).json({
@@ -166,14 +199,19 @@ module.exports.delete_post = async (req, res, next) => {
             .catch(err => {
                 res.status(500).json({ error: err })
             })
+
     } catch (err) {
         res.status(500).json({ error: err })
     }
 }
 
-module.exports.get_a_post = (req, res, next) => {
+module.exports.get_a_post = async (req, res, next) => {
     // console.log(req.params.postId)
     Post.findById(req.params.postId)
+        .populate({ path: 'account', select: 'username' })
+        .populate({ path: 'post_type', select: 'name' })
+        .populate({ path: 'province', select: 'name' })
+        .populate({ path: 'district', select: 'name' })
         .exec()
         .then(post => {
             if (!post) {
@@ -193,12 +231,14 @@ module.exports.get_a_post = (req, res, next) => {
         })
 }
 
-module.exports.get_all_post = (req, res, next) => {
-    // const status = req.body.p
-    // console.log(status)
+module.exports.get_all_post = async (req, res, next) => {
     Post.find()
         // .select('title price')
         //  .populate('post_type','name')
+        .populate({ path: 'account', select: 'username' })
+        .populate({ path: 'post_type', select: 'name' })
+        .populate({ path: 'province', select: 'name' })
+        .populate({ path: 'district', select: 'name' })
         .exec()
         .then(docs => {
             // utcDate2 = new Date()
@@ -214,8 +254,12 @@ module.exports.get_all_post = (req, res, next) => {
 }
 
 //get tat cac post dang cho` dang
-module.exports.get_all_post_pendding = (req, res, next) => {
+module.exports.get_all_post_pendding = async (req, res, next) => {
     Post.find({ status: false })
+        .populate({ path: 'account', select: 'username' })
+        .populate({ path: 'post_type', select: 'name' })
+        .populate({ path: 'province', select: 'name' })
+        .populate({ path: 'district', select: 'name' })
         // .select('title price')
         //  .populate('post_type','name')
         .exec()
@@ -230,8 +274,12 @@ module.exports.get_all_post_pendding = (req, res, next) => {
         })
 }
 //get tat ca post da dang
-module.exports.get_all_post_is_posting = (req, res, next) => {
+module.exports.get_all_post_is_posting = async (req, res, next) => {
     Post.find({ status: "true" })
+        .populate({ path: 'account', select: 'username' })
+        .populate({ path: 'post_type', select: 'name' })
+        .populate({ path: 'province', select: 'name' })
+        .populate({ path: 'district', select: 'name' })
         // .select('title price')
         //  .populate('post_type','name')
         .exec()

@@ -86,7 +86,7 @@ module.exports.delete_post_type = async (req, res, next) => {
     }
 }
 
-module.exports.get_a_post_type = (req, res, next) => {
+module.exports.get_a_post_type = async (req, res, next) => {
     Post_type.findById(req.params.posttypeId)
         .exec()
         .then(doc => {
@@ -104,7 +104,7 @@ module.exports.get_a_post_type = (req, res, next) => {
         })
 }
 
-module.exports.get_all_post_type = (req, res, next) => {
+module.exports.get_all_post_type = async (req, res, next) => {
     Post_type.find()
         // .select('title price')
         // .populate('post_type','name')
