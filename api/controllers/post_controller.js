@@ -6,6 +6,7 @@ const Province = require('../models/province')
 const District = require('../models/district')
 const Post_type = require('../models/posts/post_type_model')
 const Account = require('../models/account')
+const User = require('../models/user')
 const Rate = require('../models/posts/rate_model')
 const Transaction = require('../models/posts/transaction_model')
 
@@ -33,6 +34,7 @@ module.exports.add_post = async (req, res, next) => {
         if (!district) {
             return res.status(404).json({ error: 'district not found' })
         }
+        console.log(district)
         const new_post = new Post({
             _id: mongoose.Types.ObjectId(),
             title: req.body.title,
@@ -109,7 +111,7 @@ module.exports.update_post = async (req, res, next) => {
         }
         //user nao` thi update post cua user do
         updateOps.updated_at = new Date()
-        Post.updateMany({ _id: id, account: accountID }, { $set: updateOps })
+        Post.updateMany({ _id: id }, { $set: updateOps })
             .exec()
             .then(result => {
                 res.status(200).json({
@@ -189,7 +191,7 @@ module.exports.delete_post = async (req, res, next) => {
                 res.status(500).json({ error: err })
             })
 
-        Post.deleteOne({ _id: id, account: accountID })
+        Post.deleteOne({ _id: id })
             .exec()
             .then(() => {
                 res.status(200).json({
@@ -207,92 +209,185 @@ module.exports.delete_post = async (req, res, next) => {
 
 module.exports.get_a_post = async (req, res, next) => {
     // console.log(req.params.postId)
-    Post.findById(req.params.postId)
-        .populate({ path: 'account', select: 'username' })
-        .populate({ path: 'post_type', select: 'name' })
-        .populate({ path: 'province', select: 'name' })
-        .populate({ path: 'district', select: 'name' })
-        .exec()
-        .then(post => {
-            if (!post) {
+    try {
+        await Post.aggregate(
+            query_lookup_post({ _id: mongoose.Types.ObjectId(req.params.postId) })
+        ).exec((err, result) => {
+            if (result.length <= 0) {
                 return res.status(404).json({
                     error: 'post not found'
                 })
             }
-            // x= new Date()
-            // console.log(x.Ut)
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
+
             res.status(200).json({
-                post: post,
-                // post_d: post.created_at.to
+                count: result.length,
+                posts: result,
             })
         })
-        .catch(err => {
-            res.json({ error: err })
+    } catch (err) {
+        res.status(500).json({
+            error: err
         })
+    }
 }
 
 module.exports.get_all_post = async (req, res, next) => {
-    Post.find()
-        // .select('title price')
-        //  .populate('post_type','name')
-        .populate({ path: 'account', select: 'username' })
-        .populate({ path: 'post_type', select: 'name' })
-        .populate({ path: 'province', select: 'name' })
-        .populate({ path: 'district', select: 'name' })
-        .exec()
-        .then(docs => {
-            // utcDate2 = new Date()
-            // console.log(utcDate2.toLocaleString())
+    try {
+        await Post.aggregate(
+            query_lookup_post()
+        ).exec((err, result) => {
+            if (result.length <= 0) {
+                return res.status(404).json({
+                    error: 'post not found'
+                })
+            }
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                posts: docs,
-            })
-        }).catch(err => {
-            res.status(500).json({
-                error: err
+                count: result.length,
+                posts: result,
             })
         })
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
 }
 
-//get tat cac post dang cho` dang
-module.exports.get_all_post_pendding = async (req, res, next) => {
-    Post.find({ status: false })
-        .populate({ path: 'account', select: 'username' })
-        .populate({ path: 'post_type', select: 'name' })
-        .populate({ path: 'province', select: 'name' })
-        .populate({ path: 'district', select: 'name' })
-        // .select('title price')
-        //  .populate('post_type','name')
-        .exec()
-        .then(docs => {
+
+module.exports.get_all_post_pendding_or_posted = async (req, res, next) => {
+    _status = null
+    if (req.params.isposted) {
+        if (req.params.isposted == 'true') {
+            _status = true
+        }
+        if (req.params.isposted == 'false') {
+            _status = false
+        }
+    }
+    try {
+        await Post.aggregate(
+            query_lookup_post({ status: _status })
+        ).exec((err, result) => {
+            if (result.length <= 0) {
+                return res.status(404).json({
+                    error: 'post not found'
+                })
+            }
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                posts: docs,
-            })
-        }).catch(err => {
-            res.status(500).json({
-                error: err
+                count: result.length,
+                posts: result,
             })
         })
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
 }
-//get tat ca post da dang
-module.exports.get_all_post_is_posting = async (req, res, next) => {
-    Post.find({ status: "true" })
-        .populate({ path: 'account', select: 'username' })
-        .populate({ path: 'post_type', select: 'name' })
-        .populate({ path: 'province', select: 'name' })
-        .populate({ path: 'district', select: 'name' })
-        // .select('title price')
-        //  .populate('post_type','name')
-        .exec()
-        .then(docs => {
+
+
+module.exports.get_all_post_with_options = async (req, res, next) => {
+    select_option = {}
+    if (req.params.typeId) {
+        select_option.post_type = mongoose.Types.ObjectId(req.params.typeId)
+    }
+    if (req.params.accountId) {
+        select_option.account = mongoose.Types.ObjectId(req.params.accountId)
+    }
+    try {
+        await Post.aggregate(
+            query_lookup_post(select_option)
+        ).exec((err, result) => {
+            if (result.length <= 0) {
+                return res.status(404).json({
+                    error: 'post not found'
+                })
+            }
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                posts: docs,
-            })
-        }).catch(err => {
-            res.status(500).json({
-                error: err
+                count: result.length,
+                posts: result,
             })
         })
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
 }
+
+function query_lookup_post(options) {
+    //dau vao la object dieu kien truy van
+    op = options ? options : {}
+    // console.log(op)
+    return [
+        { $match: op },
+        {
+            $lookup: {
+                from: 'post_types',
+                // localField: 'post_type',
+                // foreignField: '_id',
+                let: { post_type: "$post_type" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$$post_type", "$_id"] } } },
+                    { $project: { deleted_at: 0 } }
+                ],
+                as: 'post_type'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                let: { account: "$account" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$$account", "$account"] } } },
+                    { $project: { _id: 0 } }
+                ],
+                as: 'user',
+            }
+
+        },
+        {
+            $lookup: {
+                from: 'provinces',
+                localField: 'province',
+                foreignField: '_id',
+                as: 'province',
+            }
+
+        },
+        {
+            $lookup: {
+                from: 'districts',
+                localField: 'district',
+                foreignField: '_id',
+                as: 'district',
+            }
+        },
+        { $project: { account: 0 } }
+
+    ]
+}
+
 
 
 

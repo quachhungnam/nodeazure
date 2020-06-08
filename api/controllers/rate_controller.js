@@ -64,7 +64,7 @@ module.exports.update_rate = async (req, res, next) => {
                 return res.status(404).json({ error: 'post does not exist' })
             }
         }
-        
+
         updateOps.updated_at = new Date()
         Rate.updateMany({ _id: id, account: accountID }, { $set: updateOps })
             .exec()
@@ -110,54 +110,143 @@ module.exports.delete_rate = async (req, res, next) => {
 }
 
 module.exports.get_a_rate = async (req, res, next) => {
-    Rate.findById(req.params.rateId)
-        .populate({ path: 'account', select: 'username' })
-        .populate({ path: 'post', select: 'title' })
-        .exec()
-        .then(rate => {
-            if (!rate) {
+    try {
+        const id = await req.params.rateId
+        option = { _id: mongoose.Types.ObjectId(id) }
+        await Rate.aggregate(
+            query_lookup_rate(option)
+        ).exec((err, result) => {
+            if (result.length <= 0) {
                 return res.status(404).json({
                     error: 'rate not found'
                 })
             }
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                rate: rate,
+                count: result.length,
+                rate: result,
             })
         })
-        .catch(err => {
-            res.json({ error: err })
+    } catch (err) {
+        res.status(500).json({
+            error: err
         })
+    }
 }
 
 module.exports.get_all_rate = async (req, res, next) => {
-    Rate.find()
-        .populate({ path: 'account', select: 'username' })
-        .populate({ path: 'post', select: 'title' })
-        .exec()
-        .then(docs => {
+    try {
+        await Rate.aggregate(
+            query_lookup_rate()
+        ).exec((err, result) => {
+            if (result.length <= 0) {
+                return res.status(404).json({
+                    error: 'rate not found'
+                })
+            }
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                rates: docs,
-            })
-        }).catch(err => {
-            res.status(500).json({
-                error: err
+                count: result.length,
+                rate: result,
             })
         })
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+
 }
 //1 post thi co nhieu danh gia
 module.exports.get_all_rate_of_post = async (req, res, next) => {
-    const postId = req.params.postId
-    Rate.find({ post: postId })
-        .populate({ path: 'account', select: 'username' })
-        .populate({ path: 'post', select: 'title' })
-        .exec()
-        .then(docs => {
+    try {
+        const postId = await req.params.postId
+        option = { post: mongoose.Types.ObjectId(postId) }
+        await Rate.aggregate(
+            query_lookup_rate(option)
+        ).exec((err, result) => {
+            if (result.length <= 0) {
+                return res.status(404).json({
+                    error: 'rate not found'
+                })
+            }
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                rates: docs,
-            })
-        }).catch(err => {
-            res.status(500).json({
-                error: err
+                count: result.length,
+                rate: result,
             })
         })
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+}
+
+
+function query_lookup_rate(options) {
+    //dau vao la object dieu kien truy van
+    op = options ? options : {}
+    // console.log(op)
+    return [
+        { $match: op },
+        {
+            $lookup: {
+                from: 'accounts',
+                let: { account: "$account" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$$account", "$_id"] } } },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            let: { account: "$_id" },
+                            pipeline: [
+                                { $match: { $expr: { $eq: ["$$account", "$account"] } } },
+                                { $project: { _id: 0, created_at: 0, created_by: 0 } }
+                            ],
+                            as: 'user',
+                        }
+                    },
+                    { $project: { status: 0, password: 0, created_at: 0, created_by: 0, updated_at: 0 } }
+                ],
+                as: 'account',
+            }
+        },
+        {
+            $lookup: {
+                from: 'posts',
+                let: { post: "$post" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$$post", "$_id"] } } },
+                    // {
+                    //     $lookup: {
+                    //         from: 'users',
+                    //         let: { owner_post: "$account" },
+                    //         pipeline: [
+                    //             { $match: { $expr: { $eq: ["$$owner_post", "$account"] } } },
+                    //             { $project: { _id: 0 } }
+                    //         ],
+                    //         as: 'owner_post',
+                    //     }
+                    // },
+                    { $project: { post_type: 0, province: 0, district: 0, deleted_at: 0 } }
+                ],
+                as: 'post',
+            }
+
+        },
+        // { $project: { account: 0 } }
+    ]
 }

@@ -75,7 +75,7 @@ module.exports.update_transaction = async (req, res, next) => {
             }
         }
 
-        Transaction.updateMany({ _id: id, client: accountID }, { $set: updateOps })
+        Transaction.updateMany({ _id: id }, { $set: updateOps })
             .exec()
             .then(result => {
                 // console.log(result)
@@ -100,7 +100,7 @@ module.exports.delete_transaction = async (req, res, next) => {
         if (!transaction) {
             return res.status(404).json({ error: 'transaction does not exist' })
         }
-        Transaction.deleteOne({ _id: id, client: accountID })
+        Transaction.deleteOne({ _id: id })
             .exec()
             .then(() => {
                 res.status(200).json({
@@ -117,38 +117,118 @@ module.exports.delete_transaction = async (req, res, next) => {
 }
 
 module.exports.get_a_transaction = async (req, res, next) => {
-    Transaction.findById(req.params.transactionId)
-        .populate({ path: 'client', select: 'username' })
-        .populate({ path: 'post', select: 'title' })
-        .exec()
-        .then(transaction => {
-            if (!transaction) {
+    try {
+        const id = await req.params.transactionId
+        option = { _id: mongoose.Types.ObjectId(id) }
+        await Transaction.aggregate(
+            query_lookup_transaction(option)
+        ).exec((err, result) => {
+            if (result.length <= 0) {
                 return res.status(404).json({
                     error: 'transaction not found'
                 })
             }
+            if (err) {
+                console.log(err)
+                return res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                transaction: transaction
+                count: result.length,
+                transaction: result,
             })
         })
-        .catch(err => {
-            res.json({ error: err })
+    } catch (err) {
+        res.status(500).json({
+            error: err
         })
+    }
+
 }
 
 module.exports.get_all_transaction = async (req, res, next) => {
-    Transaction.find()
-        .populate({ path: 'client', select: 'username' })
-        .populate({ path: 'post', select: 'title' })
-        .exec()
-        .then(docs => {
+    try {
+        await Transaction.aggregate(
+            query_lookup_transaction()
+        ).exec((err, result) => {
+            if (result.length <= 0) {
+                return res.status(404).json({
+                    error: 'transaction not found'
+                })
+            }
+            if (err) {
+                res.status(500).json({
+                    error: err
+                })
+            }
             res.status(200).json({
-                transactions: docs,
-            })
-        }).catch(err => {
-            res.status(500).json({
-                error: err
+                count: result.length,
+                transaction: result,
             })
         })
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+}
+
+
+function query_lookup_transaction(options) {
+    //dau vao la object dieu kien truy van
+    op = options ? options : {}
+    // console.log(op)
+    return [
+        { $match: op },
+        {
+            $lookup: {
+                from: 'accounts',
+                let: { client: "$client" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$$client", "$_id"] } } },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            let: { account: "$_id" },
+                            pipeline: [
+                                { $match: { $expr: { $eq: ["$$account", "$account"] } } },
+                                { $project: { _id: 0, created_at: 0, created_by: 0 } }
+                            ],
+                            as: 'user',
+                        }
+                    },
+                    { $project: { status: 0, password: 0, created_at: 0, created_by: 0, updated_at: 0 } }
+                ],
+                as: 'client',
+            }
+        },
+        {
+            $lookup: {
+                from: 'posts',
+                let: { post: "$post" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$$post", "$_id"] } } },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            let: { owner_post: "$account" },
+                            pipeline: [
+                                { $match: { $expr: { $eq: ["$$owner_post", "$account"] } } },
+                                { $project: { _id: 0 } }
+                            ],
+                            as: 'owner_post',
+                        }
+                    },
+                    { $project: { account: 0 } }
+                ],
+                as: 'post',
+            }
+
+        },
+
+        // { $project: { account: 0 } }
+
+    ]
 }
 
