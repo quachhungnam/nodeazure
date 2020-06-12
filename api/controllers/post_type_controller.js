@@ -13,7 +13,7 @@ module.exports.add_post_type = async (req, res, next) => {
             name: req.body.name,
             description: req.body.description,
             created_at: new Date(),
-            update_at: new Date(),
+            updated_at: new Date(),
         })
         new_post_type.save()
             .then(() => {

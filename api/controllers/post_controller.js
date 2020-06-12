@@ -343,6 +343,19 @@ function query_lookup_post(options) {
         { $match: op },
         {
             $lookup: {
+                from: 'transactions',
+                // localField: 'post_type',
+                // foreignField: '_id',
+                let: { post_id: "$_id" },
+                pipeline: [
+                    { $match: { $expr: { $eq: ["$$post_id", "$post"] } } },
+                    { $project: { _id: 1 } }
+                ],
+                as: 'is_transaction'
+            }
+        },
+        {
+            $lookup: {
                 from: 'post_types',
                 // localField: 'post_type',
                 // foreignField: '_id',
