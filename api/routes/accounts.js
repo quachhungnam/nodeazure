@@ -21,9 +21,21 @@ router.patch(
 );
 
 router.patch(
+  "/:accountId/password",
+  checkAuth,
+  AccountController.accounts_update_account_password
+);
+
+router.patch(
   "/:accountId/status",
   checkAuth,
   AccountController.accounts_update_account_status
+);
+
+router.patch(
+  "/:accountId/avatar",
+  checkAuth,
+  AccountController.accounts_update_account_avatar
 );
 
 router.delete(
