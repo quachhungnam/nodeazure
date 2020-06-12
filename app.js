@@ -9,6 +9,7 @@ const posts_route = require('./api/routes/posts_route')
 const transactions_route = require('./api/routes/transactions_route')
 const rates_route = require('./api/routes/rates_route')
 const post_types_route = require('./api/routes/post_types_route')
+const status_route = require('./api/routes/status_route')
 
 const provinceRoutes = require("./api/routes/provinces");
 const districtRoutes = require("./api/routes/districts");
@@ -43,6 +44,7 @@ app.use('/posts', posts_route)
 app.use('/posttypes', post_types_route)
 app.use('/transactions', transactions_route)
 app.use('/rates', rates_route)
+app.use('/status', status_route)
 
 app.use("/provinces", provinceRoutes);
 app.use("/districts", districtRoutes);

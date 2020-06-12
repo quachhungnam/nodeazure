@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const Post = require('../models/posts/post_model')
 const Province = require('../models/province')
-// const Status = require('../models/posts/status_model')
+const Status = require('../models/posts/status_model')
 const District = require('../models/district')
 const Post_type = require('../models/posts/post_type_model')
 const Account = require('../models/account')
@@ -13,39 +13,40 @@ const Transaction = require('../models/posts/transaction_model')
 module.exports.add_post = async (req, res, next) => {
     try {
         //get ID_account trong token va kiem tra
-        const accountID = req.userData.accountId
-        const account = await Account.findById(accountID)
+        const host_id = req.userData.accountId
+        const account = await Account.findById(host_id)
         if (!account) {
             return res.status(404).json({ error: 'account not found' })
         }
-        const post_type = await Post_type.findById(req.body.post_type)
+        const post_type = await Post_type.findById(req.body.post_type_id)
         if (!post_type) {
             return res.status(404).json({ error: 'post type not found' })
         }
-        // const status = await Status.findById(req.body.status)
-        // if (!status) {
-        //     return res.status(404).json({ error: 'status not found' })
-        // }
-        const province = await Province.findById(req.body.province)
+        //mac dinh 
+        const status = await Status.find({ code: 0 })
+        if (status.length <= 0) {
+            return res.status(404).json({ error: 'status not found' })
+        }
+        const province = await Province.findById(req.body.province_id)
         if (!province) {
             return res.status(404).json({ error: 'province not found' })
         }
-        const district = await District.findById(req.body.district)
+        const district = await District.findById(req.body.district_id)
         if (!district) {
             return res.status(404).json({ error: 'district not found' })
         }
-        console.log(district)
+        // console.log(district)
         const new_post = new Post({
             _id: mongoose.Types.ObjectId(),
             title: req.body.title,
-            account: accountID,
-            post_type: req.body.post_type,
-            province: req.body.province,
-            district: req.body.district,
-            // status: req.body.status,
+            host_id: host_id,
+            post_type_id: req.body.post_type_id,
+            province_id: req.body.province_id,
+            district_id: req.body.district_id,
+            status_id: status._id,
             price: req.body.price,
             square: req.body.square,
-            address_detail: req.body.address,
+            address_detail: req.body.address_detail,
             description: req.body.description,
             created_at: new Date(),
             updated_at: new Date()
@@ -67,8 +68,8 @@ module.exports.add_post = async (req, res, next) => {
 module.exports.update_post = async (req, res, next) => {
     try {
         //kiem tra user co dang login hay ko
-        const accountID = req.userData.accountId
-        const account = await Account.findById(accountID)
+        const host_id = req.userData.accountId
+        const account = await Account.findById(host_id)
         if (!account) {
             return res.status(404).json({ error: 'account not found' })
         }
@@ -85,8 +86,8 @@ module.exports.update_post = async (req, res, next) => {
             updateOps[key] = value
         }
 
-        if (updateOps.post_type) {
-            const post_type = await Post_type.findById(req.body.post_type)
+        if (updateOps.post_type_id) {
+            const post_type = await Post_type.findById(req.body.post_type_id)
             if (!post_type) {
                 return res.status(404).json({ error: 'post type not found' })
             }
@@ -97,14 +98,14 @@ module.exports.update_post = async (req, res, next) => {
         //         return res.status(404).json({ error: 'status not found' })
         //     }
         // }
-        if (updateOps.province) {
-            const province = await Province.findById(req.body.province)
+        if (updateOps.province_id) {
+            const province = await Province.findById(req.body.province_id)
             if (!province) {
                 return res.status(404).json({ error: 'province not found' })
             }
         }
-        if (updateOps.district) {
-            const district = await District.findById(req.body.district)
+        if (updateOps.district_id) {
+            const district = await District.findById(req.body.district_id)
             if (!district) {
                 return res.status(404).json({ error: 'district not found' })
             }
@@ -129,8 +130,8 @@ module.exports.update_post = async (req, res, next) => {
 
 module.exports.update_post_status = async (req, res, next) => {
     try {
-        const accountID = req.userData.accountId
-        const account = await Account.findById(accountID)
+        const host_id = req.userData.accountId
+        const account = await Account.findById(host_id)
         if (!account) {
             return res.status(404).json({ error: 'account not found' })
         }
@@ -151,7 +152,7 @@ module.exports.update_post_status = async (req, res, next) => {
             .exec()
             .then(() => {
                 res.status(200).json({
-                    message: 'updated post status',
+                    message: 'updated status of post',
                 })
             })
             .catch(err => {
@@ -165,7 +166,7 @@ module.exports.update_post_status = async (req, res, next) => {
 
 module.exports.delete_post = async (req, res, next) => {
     try {
-        const accountID = req.userData.accountId
+        // const accountID = req.userData.accountId
         const id = req.params.postId
         const post = await Post.findById(id)
         if (!post) {

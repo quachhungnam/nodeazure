@@ -6,7 +6,6 @@ const post_type_schema = mongoose.Schema({
     created_at: { type: Date, default: new Date() },
     updated_at: { type: Date, default: new Date() },
     deleted_at: { type: Date, default: null }
-
 })
 
 module.exports = mongoose.model('Post_type', post_type_schema)
