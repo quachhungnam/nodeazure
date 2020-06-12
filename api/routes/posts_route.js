@@ -11,8 +11,8 @@ router.delete('/:postId', check_auth, post_controller.delete_post)
 
 router.get('/', post_controller.get_all_post)
 router.get('/:postId', post_controller.get_a_post)
-router.get('/posted/:isposted', post_controller.get_all_post_pendding_or_posted)
-router.get('/type/:typeId?/account/:accountId?', post_controller.get_all_post_with_options)
+router.get('/status/:code', post_controller.get_all_post_with_status)
+router.get('/type/:typeId?/account/:hostId?', post_controller.get_all_post_with_options)
 
 
 module.exports = router

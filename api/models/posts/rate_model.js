@@ -8,8 +8,6 @@ const rate_schema = mongoose.Schema({
     description: { type: String, default: '' },
     created_at: { type: Date, default: new Date() },
     updated_at: { type: Date, default: null },
-    deleted_at: { type: Date, default: null }
-
 })
 
 module.exports = mongoose.model('Rate', rate_schema)

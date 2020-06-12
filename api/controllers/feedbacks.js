@@ -8,7 +8,7 @@ exports.feedbacks_get_all = (req, res, next) => {
     .select(
       "_id account description status created_at created_by updated_at updated_by"
     )
-    .populate("account", "username")
+    .populate("account")
     .exec()
     .then((docs) => {
       res.status(200).json({
@@ -98,7 +98,7 @@ exports.feedbacks_get_feedback = (req, res, next) => {
     .select(
       "_id account description status created_at created_by updated_at updated_by"
     )
-    .populate("account", "username")
+    .populate("account")
     .exec()
     .then((feedback) => {
       if (!feedback) {

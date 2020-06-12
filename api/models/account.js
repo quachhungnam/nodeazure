@@ -15,6 +15,29 @@ const accountSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  name: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    unique: true,
+    match: /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/,
+    required: true,
+  },
+  avatar: {
+    type: String,
+    default:
+      "https://cdn.iconscout.com/icon/free/png-512/avatar-372-456324.png",
+  },
+  mobile: {
+    type: String,
+    required: true,
+  },
+  address: {
+    type: String,
+    required: true,
+  },
   created_at: {
     type: Date,
   },

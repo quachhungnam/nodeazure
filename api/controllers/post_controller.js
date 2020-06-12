@@ -43,7 +43,7 @@ module.exports.add_post = async (req, res, next) => {
             post_type_id: req.body.post_type_id,
             province_id: req.body.province_id,
             district_id: req.body.district_id,
-            status_id: status._id,
+            status_id: status[0]._id,
             price: req.body.price,
             square: req.body.square,
             address_detail: req.body.address_detail,
@@ -74,7 +74,7 @@ module.exports.update_post = async (req, res, next) => {
             return res.status(404).json({ error: 'account not found' })
         }
 
-        const id = req.params.postId
+        const post_id = req.params.postId
         const post = await Post.findById(id)
         if (!post) {
             return res.status(404).json({ error: 'post not found' })
@@ -92,12 +92,13 @@ module.exports.update_post = async (req, res, next) => {
                 return res.status(404).json({ error: 'post type not found' })
             }
         }
-        // if (updateOps.status) {
-        //     const status = await Status.findById(req.body.status)
-        //     if (!status) {
-        //         return res.status(404).json({ error: 'status not found' })
-        //     }
-        // }
+        if (updateOps.status_code) {
+            const status = await Status.find({ code: updateOps.status_code })
+            if (status.length <= 0) {
+                return res.status(404).json({ error: 'status not found' })
+            }
+            updateOps.status_id = status[0]._id
+        }
         if (updateOps.province_id) {
             const province = await Province.findById(req.body.province_id)
             if (!province) {
@@ -110,9 +111,9 @@ module.exports.update_post = async (req, res, next) => {
                 return res.status(404).json({ error: 'district not found' })
             }
         }
-        //user nao` thi update post cua user do
+
         updateOps.updated_at = new Date()
-        Post.updateMany({ _id: id }, { $set: updateOps })
+        Post.updateMany({ _id: post_id }, { $set: updateOps })
             .exec()
             .then(result => {
                 res.status(200).json({
@@ -130,14 +131,14 @@ module.exports.update_post = async (req, res, next) => {
 
 module.exports.update_post_status = async (req, res, next) => {
     try {
-        const host_id = req.userData.accountId
+        const host_id = await req.userData.accountId
         const account = await Account.findById(host_id)
         if (!account) {
             return res.status(404).json({ error: 'account not found' })
         }
 
-        const id = req.params.postId
-        const post = await Post.findById(id)
+        const post_id = await req.params.postId
+        const post = await Post.findById(post_id)
         if (!post) {
             return res.status(404).json({ error: 'post not found' })
         }
@@ -146,9 +147,16 @@ module.exports.update_post_status = async (req, res, next) => {
         for (const [key, value] of Object.entries(req.body)) {
             updateOps[key] = value
         }
+        if (updateOps.status_code) {
+            const status = await Status.find({ code: updateOps.status_code })
+            if (status.length <= 0) {
+                return res.status(404).json({ error: 'status not found' })
+            }
+            updateOps.status_id = status[0]._id
+        }
 
         updateOps.updated_at = new Date()
-        Post.updateMany({ _id: id }, { $set: updateOps })
+        Post.updateMany({ _id: post_id }, { $set: updateOps })
             .exec()
             .then(() => {
                 res.status(200).json({
@@ -160,7 +168,6 @@ module.exports.update_post_status = async (req, res, next) => {
             })
     } catch (err) {
         res.status(500).json({ error: err })
-
     }
 }
 
@@ -209,26 +216,21 @@ module.exports.delete_post = async (req, res, next) => {
 }
 
 module.exports.get_a_post = async (req, res, next) => {
-    // console.log(req.params.postId)
     try {
-        await Post.aggregate(
-            query_lookup_post({ _id: mongoose.Types.ObjectId(req.params.postId) })
-        ).exec((err, result) => {
-            if (result.length <= 0) {
-                return res.status(404).json({
-                    error: 'post not found'
-                })
-            }
-            if (err) {
-                res.status(500).json({
-                    error: err
-                })
-            }
-
-            res.status(200).json({
-                count: result.length,
-                posts: result,
+        const post_id = await req.params.postId
+        const post = await Post.findById(post_id)
+            .populate({ path: 'host_id', select: 'name' })
+            .populate({ path: 'post_type_id', select: 'name' })
+            .populate({ path: 'province_id', select: 'name' })
+            .populate({ path: 'district_id', select: 'name' })
+            .populate({ path: 'status_id', select: 'code description' })
+        if (!post) {
+            return res.status(404).json({
+                error: 'post not found'
             })
+        }
+        res.status(200).json({
+            post: post,
         })
     } catch (err) {
         res.status(500).json({
@@ -239,23 +241,20 @@ module.exports.get_a_post = async (req, res, next) => {
 
 module.exports.get_all_post = async (req, res, next) => {
     try {
-        await Post.aggregate(
-            query_lookup_post()
-        ).exec((err, result) => {
-            if (result.length <= 0) {
-                return res.status(404).json({
-                    error: 'post not found'
-                })
-            }
-            if (err) {
-                res.status(500).json({
-                    error: err
-                })
-            }
-            res.status(200).json({
-                count: result.length,
-                posts: result,
+        const post = await Post.find()
+            .populate({ path: 'host_id', select: 'name' })
+            .populate({ path: 'post_type_id', select: 'name' })
+            .populate({ path: 'province_id', select: 'name' })
+            .populate({ path: 'district_id', select: 'name' })
+            .populate({ path: 'status_id', select: 'code description' })
+        if (post.length <= 0) {
+            return res.status(404).json({
+                error: 'post not found'
             })
+        }
+        res.status(200).json({
+            count: post.length,
+            post: post,
         })
     } catch (err) {
         res.status(500).json({
@@ -265,34 +264,24 @@ module.exports.get_all_post = async (req, res, next) => {
 }
 
 
-module.exports.get_all_post_pendding_or_posted = async (req, res, next) => {
-    _status = null
-    if (req.params.isposted) {
-        if (req.params.isposted == 'true') {
-            _status = true
-        }
-        if (req.params.isposted == 'false') {
-            _status = false
-        }
-    }
+module.exports.get_all_post_with_status = async (req, res, next) => {
     try {
-        await Post.aggregate(
-            query_lookup_post({ status: _status })
-        ).exec((err, result) => {
-            if (result.length <= 0) {
-                return res.status(404).json({
-                    error: 'post not found'
-                })
-            }
-            if (err) {
-                res.status(500).json({
-                    error: err
-                })
-            }
-            res.status(200).json({
-                count: result.length,
-                posts: result,
+        const status_code = await req.params.code
+        const status = await Status.find({ code: status_code })
+        const post = await Post.find({ status_id: status[0]._id })
+            .populate({ path: 'host_id', select: 'name' })
+            .populate({ path: 'post_type_id', select: 'name' })
+            .populate({ path: 'province_id', select: 'name' })
+            .populate({ path: 'district_id', select: 'name' })
+            .populate({ path: 'status_id', select: 'code description' })
+        if (post.length <= 0) {
+            return res.status(404).json({
+                error: 'post not found'
             })
+        }
+        res.status(200).json({
+            count: post.length,
+            post: post,
         })
     } catch (err) {
         res.status(500).json({
@@ -303,105 +292,40 @@ module.exports.get_all_post_pendding_or_posted = async (req, res, next) => {
 
 
 module.exports.get_all_post_with_options = async (req, res, next) => {
-    select_option = {}
-    if (req.params.typeId) {
-        select_option.post_type = mongoose.Types.ObjectId(req.params.typeId)
-    }
-    if (req.params.accountId) {
-        select_option.account = mongoose.Types.ObjectId(req.params.accountId)
-    }
+
     try {
-        await Post.aggregate(
-            query_lookup_post(select_option)
-        ).exec((err, result) => {
-            if (result.length <= 0) {
-                return res.status(404).json({
-                    error: 'post not found'
-                })
-            }
-            if (err) {
-                res.status(500).json({
-                    error: err
-                })
-            }
-            res.status(200).json({
-                count: result.length,
-                posts: result,
+        option = {}
+        if (req.params.typeId) {
+            const post_type = await Post_type.findById(req.params.typeId)
+            option.post_type_id = post_type._id
+        }
+        if (req.params.hostId) {
+            const host_id = await Account.findById(req.params.hostId)
+            option.host_id = host_id._id
+        }
+
+        const post = await Post.find(option)
+            .populate({ path: 'host_id', select: 'name' })
+            .populate({ path: 'post_type_id', select: 'name' })
+            .populate({ path: 'province_id', select: 'name' })
+            .populate({ path: 'district_id', select: 'name' })
+            .populate({ path: 'status_id', select: 'code description' })
+        if (post.length <= 0) {
+            return res.status(404).json({
+                error: 'post not found'
             })
+        }
+        res.status(200).json({
+            count: post.length,
+            post: post,
         })
     } catch (err) {
+        // console.log(err)
         res.status(500).json({
             error: err
         })
     }
 }
-
-function query_lookup_post(options) {
-    //dau vao la object dieu kien truy van
-    op = options ? options : {}
-    // console.log(op)
-    return [
-        { $match: op },
-        {
-            $lookup: {
-                from: 'transactions',
-                // localField: 'post_type',
-                // foreignField: '_id',
-                let: { post_id: "$_id" },
-                pipeline: [
-                    { $match: { $expr: { $eq: ["$$post_id", "$post"] } } },
-                    { $project: { _id: 1 } }
-                ],
-                as: 'is_transaction'
-            }
-        },
-        {
-            $lookup: {
-                from: 'post_types',
-                // localField: 'post_type',
-                // foreignField: '_id',
-                let: { post_type: "$post_type" },
-                pipeline: [
-                    { $match: { $expr: { $eq: ["$$post_type", "$_id"] } } },
-                    { $project: { deleted_at: 0 } }
-                ],
-                as: 'post_type'
-            }
-        },
-        {
-            $lookup: {
-                from: 'users',
-                let: { account: "$account" },
-                pipeline: [
-                    { $match: { $expr: { $eq: ["$$account", "$account"] } } },
-                    { $project: { _id: 0 } }
-                ],
-                as: 'user',
-            }
-
-        },
-        {
-            $lookup: {
-                from: 'provinces',
-                localField: 'province',
-                foreignField: '_id',
-                as: 'province',
-            }
-
-        },
-        {
-            $lookup: {
-                from: 'districts',
-                localField: 'district',
-                foreignField: '_id',
-                as: 'district',
-            }
-        },
-        { $project: { account: 0 } }
-
-    ]
-}
-
 
 
 
