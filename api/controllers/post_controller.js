@@ -75,7 +75,7 @@ module.exports.update_post = async (req, res, next) => {
         }
 
         const post_id = req.params.postId
-        const post = await Post.findById(id)
+        const post = await Post.findById(post_id)
         if (!post) {
             return res.status(404).json({ error: 'post not found' })
         }
@@ -121,9 +121,12 @@ module.exports.update_post = async (req, res, next) => {
                 })
             })
             .catch(err => {
+                console.log(err)
+
                 res.status(500).json({ error: err })
             })
     } catch (err) {
+        console.log(err)
         res.status(500).json({ error: err })
 
     }
