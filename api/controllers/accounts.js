@@ -289,7 +289,7 @@ exports.accounts_update_account_status = (req, res, next) => {
 exports.accounts_update_account_avatar = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {
-    avatar: req.body.avatar,
+    avatar: req.file.path,
   };
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;
