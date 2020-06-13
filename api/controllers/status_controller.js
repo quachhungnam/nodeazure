@@ -32,8 +32,8 @@ module.exports.add_status = async (req, res, next) => {
 
 module.exports.update_status = async (req, res, next) => {
     try {
-        const id = req.params.statusId
-        const status = await Status.findById(id)
+        const status_id = await req.params.statusId
+        const status = await Status.findById(status_id)
         if (!status) {
             return res.status(404).json({ error: 'status does not exist' })
         }
@@ -42,7 +42,7 @@ module.exports.update_status = async (req, res, next) => {
             updateOps[key] = value
         }
         updateOps.updated_at = new Date()
-        Status.updateMany({ _id: id }, { $set: updateOps })
+        Status.updateMany({ _id: status_id }, { $set: updateOps })
             .exec()
             .then(() => {
                 res.status(200).json({
@@ -60,12 +60,12 @@ module.exports.update_status = async (req, res, next) => {
 
 module.exports.delete_status = async (req, res, next) => {
     try {
-        const id = req.params.statusId
-        const status = await Status.findById(id)
+        const status_id = req.params.statusId
+        const status = await Status.findById(status_id)
         if (!status) {
             return res.status(404).json({ error: 'status does not exist' })
         }
-        const post_ref = await Post.find({ status: id })
+        const post_ref = await Post.find({ status_id: status_id })
         //get all post have status=id
         if (post_ref.length > 0) {
             return res.status(500).json({
@@ -73,7 +73,7 @@ module.exports.delete_status = async (req, res, next) => {
             })
         }
 
-        Status.deleteOne({ _id: id })
+        Status.deleteOne({ _id: status_id })
             .then(() => {
                 res.status(200).json({ message: 'status deleted' })
             })
@@ -86,35 +86,43 @@ module.exports.delete_status = async (req, res, next) => {
 }
 
 module.exports.get_a_status = async (req, res, next) => {
-    Status.findById(req.params.statusId)
-        .exec()
-        .then(doc => {
-            if (!doc) {
-                return res.status(404).json({
-                    error: 'status not found'
-                })
-            }
-            res.status(200).json({
-                status: doc
+    try {
+        const status_id = req.params.statusId
+        const status = await Status.findById(status_id)
+
+        if (!status) {
+            return res.status(404).json({
+                error: 'status not found'
             })
+        }
+        res.status(200).json({
+            status: status
         })
-        .catch(err => {
-            res.status(500).json({ error: err })
+    } catch (err) {
+        res.status(500).json({
+            error: err
         })
+    }
 }
 
 module.exports.get_all_status = async (req, res, next) => {
-    Status.find()
-        .exec()
-        .then(docs => {
-            res.status(200).json({
-                statuses: docs,
+    try {
+        const status = await Status.find()
+
+        if (status.length <= 0) {
+            return res.status(404).json({
+                error: 'status is empty'
             })
-        }).catch(err => {
-            res.status(500).json({
-                error: err
-            })
+        }
+        res.status(200).json({
+            count: status.length,
+            statuses: status
         })
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
 }
 
 

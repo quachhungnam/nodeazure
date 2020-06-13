@@ -6,7 +6,7 @@ const Status = require('../models/posts/status_model')
 const District = require('../models/district')
 const Post_type = require('../models/posts/post_type_model')
 const Account = require('../models/account')
-const User = require('../models/user')
+// const User = require('../models/user')
 const Rate = require('../models/posts/rate_model')
 const Transaction = require('../models/posts/transaction_model')
 
@@ -43,13 +43,13 @@ module.exports.add_post = async (req, res, next) => {
             post_type_id: req.body.post_type_id,
             province_id: req.body.province_id,
             district_id: req.body.district_id,
-            status_id: status[0]._id,
+            status_id: status[0]._id,//tao bai post lan` dau thi mac dịnh status = 0
             price: req.body.price,
             square: req.body.square,
             address_detail: req.body.address_detail,
             description: req.body.description,
             created_at: new Date(),
-            updated_at: new Date()
+            // updated_at: null
         })
         new_post.save((err) => {
             if (err) {
@@ -92,12 +92,14 @@ module.exports.update_post = async (req, res, next) => {
                 return res.status(404).json({ error: 'post type not found' })
             }
         }
+        //gui status_code len chu' ko gui status_id
         if (updateOps.status_code) {
             const status = await Status.find({ code: updateOps.status_code })
             if (status.length <= 0) {
                 return res.status(404).json({ error: 'status not found' })
             }
             updateOps.status_id = status[0]._id
+            delete updateOps.status_code //xoa truong status_code trong updateOps
         }
         if (updateOps.province_id) {
             const province = await Province.findById(req.body.province_id)
@@ -156,6 +158,7 @@ module.exports.update_post_status = async (req, res, next) => {
                 return res.status(404).json({ error: 'status not found' })
             }
             updateOps.status_id = status[0]._id
+            delete updateOps.status_code //xoa truong status_code trong updateOps
         }
 
         updateOps.updated_at = new Date()
@@ -222,10 +225,10 @@ module.exports.get_a_post = async (req, res, next) => {
     try {
         const post_id = await req.params.postId
         const post = await Post.findById(post_id)
-            .populate({ path: 'host_id', select: 'name' })
-            .populate({ path: 'post_type_id', select: 'name' })
-            .populate({ path: 'province_id', select: 'name' })
-            .populate({ path: 'district_id', select: 'name' })
+            .populate({ path: 'host_id', select: 'name username email mobile' })
+            .populate({ path: 'post_type_id', select: 'name description' })
+            .populate({ path: 'province_id', select: 'name code' })
+            .populate({ path: 'district_id', select: 'name code parent_code' })
             .populate({ path: 'status_id', select: 'code description' })
         if (!post) {
             return res.status(404).json({
@@ -245,10 +248,11 @@ module.exports.get_a_post = async (req, res, next) => {
 module.exports.get_all_post = async (req, res, next) => {
     try {
         const post = await Post.find()
-            .populate({ path: 'host_id', select: 'name' })
-            .populate({ path: 'post_type_id', select: 'name' })
-            .populate({ path: 'province_id', select: 'name' })
-            .populate({ path: 'district_id', select: 'name' })
+            .sort({ 'created_at': 'desc' })
+            .populate({ path: 'host_id', select: 'name username email mobile' })
+            .populate({ path: 'post_type_id', select: 'name description' })
+            .populate({ path: 'province_id', select: 'name code' })
+            .populate({ path: 'district_id', select: 'name code parent_code' })
             .populate({ path: 'status_id', select: 'code description' })
         if (post.length <= 0) {
             return res.status(404).json({
@@ -265,17 +269,51 @@ module.exports.get_all_post = async (req, res, next) => {
         })
     }
 }
-
+module.exports.get_all_post_with_page = async (req, res, next) => {
+    try {
+        const posts = await Post.find()
+            .sort({ 'created_at': 'desc' }) //thoi gian tao gan nhat thi o dau
+            .populate({ path: 'host_id', select: 'name username email mobile' })
+            .populate({ path: 'post_type_id', select: 'name description' })
+            .populate({ path: 'province_id', select: 'name code' })
+            .populate({ path: 'district_id', select: 'name code parent_code' })
+            .populate({ path: 'status_id', select: 'code description' })
+        if (posts.length <= 0) {
+            return res.status(404).json({
+                error: 'post not found'
+            })
+        }
+        result = {
+            count: posts.length,
+            post: posts,
+        }
+        if (req.params.pageNumber) {
+            const at_page = await parseInt(req.params.pageNumber)
+            result = paging(posts, at_page, 10)
+            if (result.error) {
+                return res.status(500).json({
+                    error: result.error
+                })
+            }
+        }
+        res.status(200).json(result)
+    } catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+}
 
 module.exports.get_all_post_with_status = async (req, res, next) => {
     try {
         const status_code = await req.params.code
         const status = await Status.find({ code: status_code })
         const post = await Post.find({ status_id: status[0]._id })
-            .populate({ path: 'host_id', select: 'name' })
-            .populate({ path: 'post_type_id', select: 'name' })
-            .populate({ path: 'province_id', select: 'name' })
-            .populate({ path: 'district_id', select: 'name' })
+            .sort({ 'created_at': 'desc' })
+            .populate({ path: 'host_id', select: 'name username email mobile' })
+            .populate({ path: 'post_type_id', select: 'name description' })
+            .populate({ path: 'province_id', select: 'name code' })
+            .populate({ path: 'district_id', select: 'name code parent_code' })
             .populate({ path: 'status_id', select: 'code description' })
         if (post.length <= 0) {
             return res.status(404).json({
@@ -295,7 +333,6 @@ module.exports.get_all_post_with_status = async (req, res, next) => {
 
 
 module.exports.get_all_post_with_options = async (req, res, next) => {
-
     try {
         option = {}
         if (req.params.typeId) {
@@ -307,6 +344,35 @@ module.exports.get_all_post_with_options = async (req, res, next) => {
             option.host_id = host_id._id
         }
 
+        const post = await Post.find(option)
+            .sort({ 'created_at': 'desc' })
+            .populate({ path: 'host_id', select: 'name' })
+            .populate({ path: 'post_type_id', select: 'name' })
+            .populate({ path: 'province_id', select: 'name' })
+            .populate({ path: 'district_id', select: 'name' })
+            .populate({ path: 'status_id', select: 'code description' })
+        if (post.length <= 0) {
+            return res.status(404).json({
+                error: 'post not found'
+            })
+        }
+        res.status(200).json({
+            count: post.length,
+            post: post,
+        })
+    } catch (err) {
+        // console.log(err)
+        res.status(500).json({
+            error: err
+        })
+    }
+}
+module.exports.get_all_post_with_address = async (req, res, next) => {
+    try {
+        option = {}
+        if (req.params.addressName) {
+            option.address_detail = { $regex: '.*' + req.params.addressName + '.*' }
+        }
         const post = await Post.find(option)
             .populate({ path: 'host_id', select: 'name' })
             .populate({ path: 'post_type_id', select: 'name' })
@@ -332,3 +398,23 @@ module.exports.get_all_post_with_options = async (req, res, next) => {
 
 
 
+function paging(posts, at_page, number_per_page) {
+    if (isNaN(at_page)) {
+        return { error: 'page is not a number ' }
+    }
+    const total_page = parseInt(posts.length / number_per_page) + 1
+    if (at_page > total_page) {
+        return { error: 'current page is bigger total page ' }
+    }
+    const start_index_post = (at_page - 1) * number_per_page
+    const end_index_post = at_page * number_per_page
+    const post_in_a_page = posts.slice(start_index_post, end_index_post)
+
+    result = {
+        count_total: posts.length,
+        count_a_page: post_in_a_page.length,
+        total_page: total_page,
+        post: post_in_a_page,
+    }
+    return result
+}

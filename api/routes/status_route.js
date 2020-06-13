@@ -4,7 +4,7 @@ const status_controller = require('../controllers/status_controller')
 const check_auth = require('../middlewares/check-auth')
 
 
-router.post('/', status_controller.add_status)
+router.post('/', check_auth, status_controller.add_status)
 router.patch('/:statusId', check_auth, status_controller.update_status)
 router.delete('/:statusId', check_auth, status_controller.delete_status)
 
