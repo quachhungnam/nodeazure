@@ -175,6 +175,7 @@ exports.account_login = (req, res, next) => {
               return res.status(200).json({
                 success: true,
                 message: "Auth successful",
+                _id: account[0]._id,
                 token: token,
               });
             }
