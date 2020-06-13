@@ -51,15 +51,19 @@ module.exports.add_post = async (req, res, next) => {
             created_at: new Date(),
             // updated_at: null
         })
-        new_post.save((err) => {
+        new_post.save((err, doc) => {
             if (err) {
                 return res.status(500).json({ error: err })
             }
+            res.status(201).json({
+                message: 'post created',
+                post: doc
+            })
         })
-        res.status(201).json({
-            message: 'post created',
-            post: new_post
-        })
+        // res.status(201).json({
+        //     message: 'post created',
+        //     post: new_post
+        // })
     } catch (err) {
         res.status(500).json({ error: err })
     }
@@ -254,11 +258,11 @@ module.exports.get_all_post = async (req, res, next) => {
             .populate({ path: 'province_id', select: 'name code' })
             .populate({ path: 'district_id', select: 'name code parent_code' })
             .populate({ path: 'status_id', select: 'code description' })
-        if (post.length <= 0) {
-            return res.status(404).json({
-                error: 'post not found'
-            })
-        }
+        // if (post.length <= 0) {
+        //     return res.status(404).json({
+        //         error: 'post not found'
+        //     })
+        // }
         res.status(200).json({
             count: post.length,
             post: post,
@@ -278,11 +282,11 @@ module.exports.get_all_post_with_page = async (req, res, next) => {
             .populate({ path: 'province_id', select: 'name code' })
             .populate({ path: 'district_id', select: 'name code parent_code' })
             .populate({ path: 'status_id', select: 'code description' })
-        if (posts.length <= 0) {
-            return res.status(404).json({
-                error: 'post not found'
-            })
-        }
+        // if (posts.length <= 0) {
+        //     return res.status(404).json({
+        //         error: 'post not found'
+        //     })
+        // }
         result = {
             count: posts.length,
             post: posts,
@@ -315,11 +319,11 @@ module.exports.get_all_post_with_status = async (req, res, next) => {
             .populate({ path: 'province_id', select: 'name code' })
             .populate({ path: 'district_id', select: 'name code parent_code' })
             .populate({ path: 'status_id', select: 'code description' })
-        if (post.length <= 0) {
-            return res.status(404).json({
-                error: 'post not found'
-            })
-        }
+        // if (post.length <= 0) {
+        //     return res.status(404).json({
+        //         error: 'post not found'
+        //     })
+        // }
         res.status(200).json({
             count: post.length,
             post: post,
