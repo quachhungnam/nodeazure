@@ -370,8 +370,8 @@ module.exports.get_all_post_with_options = async (req, res, next) => {
 module.exports.get_all_post_with_address = async (req, res, next) => {
     try {
         option = {}
-        if (req.params.addressName) {
-            option.address_detail = { $regex: '.*' + req.params.addressName + '.*' }
+        if (req.body.address) {
+            option.address_detail = { $regex: '.*' + req.body.address + '.*' }
         }
         const post = await Post.find(option)
             .populate({ path: 'host_id', select: 'name' })
@@ -389,7 +389,7 @@ module.exports.get_all_post_with_address = async (req, res, next) => {
             post: post,
         })
     } catch (err) {
-        // console.log(err)
+        console.log(err)
         res.status(500).json({
             error: err
         })

@@ -14,7 +14,7 @@ router.get('/page/:pageNumber?', post_controller.get_all_post_with_page)
 router.get('/:postId', post_controller.get_a_post)
 router.get('/status/:code', post_controller.get_all_post_with_status)
 router.get('/type/:typeId?/account/:hostId?', post_controller.get_all_post_with_options)
-router.get('/address/:addressName?', post_controller.get_all_post_with_address)
+router.get('/finds/address', post_controller.get_all_post_with_address)
 
 
 module.exports = router
