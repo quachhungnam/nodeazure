@@ -109,6 +109,7 @@ module.exports.get_a_post_type = async (req, res, next) => {
 module.exports.get_all_post_type = async (req, res, next) => {
     try {
         const post_type = await Post_type.find()
+            .sort({ name: 'asc' })
         if (post_type.length <= 0) {
             return res.status(404).json({
                 error: 'post type not found'
