@@ -132,6 +132,7 @@ module.exports.get_a_rate = async (req, res, next) => {
 module.exports.get_all_rate = async (req, res, next) => {
     try {
         const rate = await Rate.find()
+            .sort({ 'created_at': 'desc' })
             .populate({ path: 'post_id', select: 'title' })
             .populate({ path: 'account_id', select: 'username name' })
 
@@ -157,6 +158,7 @@ module.exports.get_all_rate_of_post = async (req, res, next) => {
         const post_id = req.params.postId
         // const post = await Post.findById(post_id)
         const rate = await Rate.find({ post_id: post_id })
+            .sort({ 'created_at': 'desc' })
             .populate({ path: 'post_id', select: 'title' })
             .populate({ path: 'account_id', select: 'username name' })
 
