@@ -274,8 +274,8 @@ module.exports.get_all_post_with_status = async (req, res, next) => {
         const post = await Post.find({ status_id: status[0]._id })
             .populate({ path: 'host_id', select: 'name' })
             .populate({ path: 'post_type_id', select: 'name' })
-            .populate({ path: 'province_id', select: 'name' })
-            .populate({ path: 'district_id', select: 'name' })
+            .populate({ path: 'province_id', select: 'name code' })
+            .populate({ path: 'district_id', select: 'name code' })
             .populate({ path: 'status_id', select: 'code description' })
         if (post.length <= 0) {
             return res.status(404).json({

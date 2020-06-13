@@ -8,7 +8,7 @@ exports.feedbacks_get_all = (req, res, next) => {
     .select(
       "_id account description status created_at created_by updated_at updated_by"
     )
-    .populate("account")
+    .populate("account", "name mobile email")
     .exec()
     .then((docs) => {
       res.status(200).json({
