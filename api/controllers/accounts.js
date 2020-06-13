@@ -145,9 +145,9 @@ exports.account_login = (req, res, next) => {
     .exec()
     .then((account) => {
       if (account.length < 1) {
-        return res.status(401).json({
+        return res.status(403).json({
           success: false,
-          message: "Username does not exists",
+          message: "Username does not exist",
         });
       }
       if (account[0].status == true) {
@@ -179,9 +179,9 @@ exports.account_login = (req, res, next) => {
                 token: token,
               });
             }
-            res.status(401).json({
+            res.status(403).json({
               success: false,
-              message: "Auth failed",
+              message: "Password is wrong",
             });
           }
         );
@@ -290,7 +290,7 @@ exports.accounts_update_account_status = (req, res, next) => {
 exports.accounts_update_account_avatar = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {
-    avatar: req.file.path,
+    avatar: req.file.originalname,
   };
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;

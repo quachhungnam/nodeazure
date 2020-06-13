@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const Post = require('../models/posts/post_model')
 const Account = require('../models/account')
 const Transaction = require('../models/posts/transaction_model')
+const Status = require('../models/posts/status_model')
 
 module.exports.add_transaction = async (req, res, next) => {
     try {
@@ -20,7 +21,6 @@ module.exports.add_transaction = async (req, res, next) => {
         if (transaction.length > 0) {
             return res.status(409).json({ error: 'transaction exist' })
         }
-
         const new_transaction = new Transaction({
             _id: mongoose.Types.ObjectId(),
             client_id: client_id,
@@ -29,14 +29,17 @@ module.exports.add_transaction = async (req, res, next) => {
             created_at: new Date(),
             updated_at: new Date()
         })
+
         new_transaction.save()
             .then((transaction) => {
                 res.status(201).json({
                     message: 'transaction created',
                     transaction: transaction
                 })
+                // khi 1 transaction duoc tao ra thi post status cung thay doi sang 2: da dat cho
+                change_status_post(post_id, 2)
             }).catch(err => {
-                res.status(500).json({
+                return res.status(500).json({
                     error: err
                 })
             })
@@ -98,12 +101,14 @@ module.exports.delete_transaction = async (req, res, next) => {
         if (!transaction) {
             return res.status(404).json({ error: 'transaction does not exist' })
         }
+        const post_id = transaction.post_id
         Transaction.deleteOne({ _id: transaction_id })
             .exec()
             .then(() => {
                 res.status(200).json({
                     message: 'transaction deleted',
                 })
+                change_status_post(post_id, 1)
             })
             .catch(err => {
                 res.status(500).json({ error: err })
@@ -118,7 +123,10 @@ module.exports.get_a_transaction = async (req, res, next) => {
     try {
         const transaction_id = await req.params.transactionId
         const transaction = await Transaction.findById(transaction_id)
-            .populate({ path: 'post_id', select: 'title' })
+            .populate({
+                path: 'post_id', select: 'title status_id host_id',
+                populate: { path: 'status_id host_id', select: 'username name code description' },
+            })
             .populate({ path: 'client_id', select: 'username name' })
 
         if (!transaction) {
@@ -139,7 +147,10 @@ module.exports.get_a_transaction = async (req, res, next) => {
 module.exports.get_all_transaction = async (req, res, next) => {
     try {
         const transaction = await Transaction.find()
-            .populate({ path: 'post_id', select: 'title' })
+            .populate({
+                path: 'post_id', select: 'title status_id host_id',
+                populate: { path: 'status_id host_id', select: 'username name code description' },
+            })
             .populate({ path: 'client_id', select: 'username name' })
 
         if (transaction.length <= 0) {
@@ -159,3 +170,23 @@ module.exports.get_all_transaction = async (req, res, next) => {
 }
 
 
+async function change_status_post(post_id, new_status_code) {
+    try {
+        const post = await Post.findById(post_id)
+        if (!post) {
+            return { error: 'post not found' }
+        }
+        const status = await Status.find({ code: new_status_code })
+        if (status.length <= 0) {
+            return { error: 'status not found' }
+        }
+        Post.updateMany({ _id: post_id }, { $set: { status_id: status[0]._id } })
+            .exec()
+            .then(() => {
+                return { message: 'success' }
+            })
+    } catch (err) {
+        return { error: err }
+    }
+
+}

@@ -59,7 +59,7 @@ app.use("/provinces", provinceRoutes);
 app.use("/districts", districtRoutes);
 app.use("/accounts", accountRoutes);
 app.use("/feedbacks", feedbackRoutes);
-
+app.use(express.static('uploads'))
 // app.use('/postspending',posts_route.)
 
 app.use((req, res, next) => {
