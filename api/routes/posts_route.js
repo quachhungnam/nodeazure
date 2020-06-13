@@ -10,9 +10,11 @@ router.patch('/status/:postId', check_auth, post_controller.update_post_status)
 router.delete('/:postId', check_auth, post_controller.delete_post)
 
 router.get('/', post_controller.get_all_post)
+router.get('/page/:pageNumber?', post_controller.get_all_post_with_page)
 router.get('/:postId', post_controller.get_a_post)
 router.get('/status/:code', post_controller.get_all_post_with_status)
 router.get('/type/:typeId?/account/:hostId?', post_controller.get_all_post_with_options)
+router.get('/finds/address', post_controller.get_all_post_with_address)
 
 
 module.exports = router
