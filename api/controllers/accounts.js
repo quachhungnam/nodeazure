@@ -145,7 +145,7 @@ exports.account_login = (req, res, next) => {
     .exec()
     .then((account) => {
       if (account.length < 1) {
-        return res.status(401).json({
+        return res.status(404).json({
           success: false,
           message: "Username does not exists",
         });
@@ -156,7 +156,7 @@ exports.account_login = (req, res, next) => {
           account[0].password,
           (err, result) => {
             if (err) {
-              return res.status(401).json({
+              return res.status(404).json({
                 success: false,
                 message: "Auth failed",
               });
@@ -178,9 +178,9 @@ exports.account_login = (req, res, next) => {
                 token: token,
               });
             }
-            res.status(401).json({
+            res.status(404).json({
               success: false,
-              message: "Auth failed",
+              message: "Wrong password",
             });
           }
         );
@@ -222,6 +222,48 @@ exports.accounts_update_account = (req, res, next) => {
     })
     .catch((err) => {
       console.log(err);
+      res.status(500).json({
+        success: false,
+        error: err,
+      });
+    });
+};
+
+exports.accounts_check_account_password = (req, res, next) => {
+  Account.find({ _id: req.params.accountId })
+    .exec()
+    .then((account) => {
+      if (account.length < 1) {
+        return res.status(404).json({
+          success: false,
+          message: "Account not found",
+        });
+      } else {
+        bcrypt.compare(
+          req.body.password,
+          account[0].password,
+          (err, result) => {
+            if (err) {
+              return res.status(404).json({
+                success: false,
+                message: "Wrong password",
+              });
+            }
+            if (result) {
+              return res.status(200).json({
+                success: true,
+                message: "Right password",
+              });
+            }
+            res.status(404).json({
+              success: false,
+              message: "Wrong password",
+            });
+          }
+        );
+      }
+    })
+    .catch((err) => {
       res.status(500).json({
         success: false,
         error: err,
@@ -289,7 +331,7 @@ exports.accounts_update_account_status = (req, res, next) => {
 exports.accounts_update_account_avatar = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {
-    avatar: req.file.path,
+    avatar: req.file.path.split("\\")[1],
   };
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;

@@ -5,7 +5,7 @@ const Province = require("../models/province");
 
 exports.districts_get_all = (req, res, next) => {
   District.find()
-    .select("_id parent_code code name")
+    .select("_id parent_code code name name_with_type")
     .exec()
     .then((docs) => {
       res.status(200).json({
@@ -55,7 +55,6 @@ exports.districts_create_district = (req, res, next) => {
         path_with_type: req.body.path_with_type,
         code: req.body.code,
         parent_code: req.body.parent_code,
-       
       });
       return district.save();
     })
@@ -86,7 +85,7 @@ exports.districts_create_district = (req, res, next) => {
 
 exports.districts_get_district = (req, res, next) => {
   District.find({ parent_code: req.params.provinceId })
-    .select("_id parent_code code name")
+    .select("_id parent_code code name name_with_type")
     .exec()
     .then((district) => {
       if (district.length == 0) {

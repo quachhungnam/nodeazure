@@ -40,6 +40,12 @@ router.post("/signup", AccountController.account_signup);
 
 router.post("/login", AccountController.account_login);
 
+router.post(
+  "/:accountId/checkpassword",
+  checkAuth,
+  AccountController.accounts_check_account_password
+);
+
 router.patch(
   "/:accountId",
   checkAuth,

@@ -5,10 +5,9 @@ const District = require("../models/district");
 
 exports.provinces_get_all = (req, res, next) => {
   Province.find()
-    .select("code name")
+    .select("code name name_with_type")
     .exec()
     .then((docs) => {
-      console.log(docs);
       const response = {
         success: true,
         data: {
@@ -43,7 +42,7 @@ exports.provinces_create_province = (req, res, next) => {
     code: req.body.code,
     name_with_type: req.body.name_with_type,
     type: req.body.type,
-    slug: req.body.slug
+    slug: req.body.slug,
   });
   province
     .save()
@@ -74,7 +73,7 @@ exports.provinces_create_province = (req, res, next) => {
 exports.provinces_get_province = (req, res, next) => {
   const id = req.params.provinceId;
   Province.find({ code: id })
-    .select("code name")
+    .select("code name name_with_type")
     .exec()
     .then((doc) => {
       if (doc.length != 0) {
