@@ -291,15 +291,15 @@ module.exports.get_all_post_with_page = async (req, res, next) => {
             count: posts.length,
             post: posts,
         }
-        if (req.params.pageNumber) {
-            const at_page = await parseInt(req.params.pageNumber)
-            result = paging(posts, at_page, 10)
-            if (result.error) {
-                return res.status(500).json({
-                    error: result.error
-                })
-            }
+        // if (req.params.pageNumber) {
+        const at_page = await parseInt(req.params.pageNumber) || 1
+        result = paging(posts, at_page, 10)
+        if (result.error) {
+            return res.status(500).json({
+                error: result.error
+            })
         }
+        // }
         res.status(200).json(result)
     } catch (err) {
         res.status(500).json({
@@ -355,11 +355,11 @@ module.exports.get_all_post_with_options = async (req, res, next) => {
             .populate({ path: 'province_id', select: 'name' })
             .populate({ path: 'district_id', select: 'name' })
             .populate({ path: 'status_id', select: 'code description' })
-        if (post.length <= 0) {
-            return res.status(404).json({
-                error: 'post not found'
-            })
-        }
+        // if (post.length <= 0) {
+        //     return res.status(404).json({
+        //         error: 'post not found'
+        //     })
+        // }
         res.status(200).json({
             count: post.length,
             post: post,
