@@ -51,7 +51,7 @@ exports.accounts_get_all = (req, res, next) => {
 };
 
 exports.accounts_get_account = (req, res, next) => {
-  const id = req.params.accountId;
+  const id = req.userData.accountId || req.params.accountId;
   Account.findById(id)
     .select(
       "_id username password status name email avatar mobile address created_at created_by updated_at updated_by"
@@ -203,9 +203,9 @@ exports.account_login = (req, res, next) => {
 exports.accounts_update_account = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {};
-  for (const ops of req.body) {
-    updateOps[ops.propName] = ops.value;
-  }
+  for (const [key, value] of Object.entries(req.body)) {
+    updateOps[key] = value;
+}
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;
   Account.update({ _id: id }, { $set: updateOps })
@@ -278,7 +278,7 @@ exports.accounts_update_account_password = (req, res, next) => {
     updateOps.password = hash;
     updateOps.updated_at = new Date();
     updateOps.updated_by = id;
-    Account.update({ _id: id }, { $set: updateOps })
+    Account.updateMany({ _id: id }, { $set: updateOps })
       .exec()
       .then((result) => {
         res.status(200).json({
@@ -365,6 +365,41 @@ exports.accounts_delete_account = (req, res, next) => {
         success: true,
         message: "Account deleted",
       });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({
+        success: false,
+        error: err,
+      });
+    });
+};
+
+exports.get_account_from_token = (req, res, next) => {
+  const id = req.userData.accountId
+  Account.findById(id)
+    .select(
+      "_id username password status name email avatar mobile address created_at created_by updated_at updated_by"
+    )
+    .exec()
+    .then((doc) => {
+      if (doc) {
+        res.status(200).json({
+          success: true,
+          data: {
+            account: doc,
+            request: {
+              type: "GET",
+              url: "http://localhost:3000/accounts",
+            },
+          },
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          message: "No valid entry found for provided ID",
+        });
+      }
     })
     .catch((err) => {
       console.log(err);

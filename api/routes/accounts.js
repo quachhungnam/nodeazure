@@ -76,5 +76,5 @@ router.delete(
   checkAuth,
   AccountController.accounts_delete_account
 );
-
+router.get('/usertoken/yes', checkAuth, AccountController.get_account_from_token)
 module.exports = router;

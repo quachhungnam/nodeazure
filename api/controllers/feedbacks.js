@@ -55,7 +55,7 @@ exports.feedbacks_create_feedback = (req, res, next) => {
         _id: mongoose.Types.ObjectId(),
         account: req.body.accountId,
         description: req.body.description,
-        status: req.body.status,
+        // status: req.body.status,
         created_at: new Date(),
         created_by: req.body.accountId,
         updated_at: null,

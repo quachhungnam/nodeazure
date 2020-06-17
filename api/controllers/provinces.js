@@ -5,6 +5,7 @@ const District = require("../models/district");
 
 exports.provinces_get_all = (req, res, next) => {
   Province.find()
+    .sort({ name: 'asc' })
     .select("code name name_with_type")
     .exec()
     .then((docs) => {
