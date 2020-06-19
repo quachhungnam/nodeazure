@@ -17,10 +17,10 @@ exports.provinces_get_all = (req, res, next) => {
             return {
               code: doc.code,
               name: doc.name,
-              request: {
-                type: "GET",
-                url: "http://localhost:3000/provinces/" + doc.code,
-              },
+              // request: {
+              //   type: "GET",
+              //   url: "http://localhost:3000/provinces/" + doc.code,
+              // },
             };
           }),
         },
@@ -79,6 +79,7 @@ exports.provinces_get_province = (req, res, next) => {
     .then((doc) => {
       if (doc.length != 0) {
         const province = {
+          _id: doc[0]._id,
           name: doc[0].name,
           code: doc[0].code,
         };
