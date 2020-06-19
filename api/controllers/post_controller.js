@@ -64,6 +64,61 @@ module.exports.add_post = async (req, res, next) => {
         res.status(500).json({ error: err });
     }
 };
+module.exports.add_post_new = async (req, res, next) => {
+    // console.log(req.body)
+    try {
+        //get ID_account trong token va kiem tra
+        const host_id = req.userData.accountId;
+        const account = await Account.findById(host_id);
+        if (!account) {
+            return res.status(404).json({ error: "account not found" });
+        }
+        const post_type = await Post_type.findById(req.body.post_type_id);
+        if (!post_type) {
+            return res.status(404).json({ error: "post type not found" });
+        }
+        //mac dinh
+        const status = await Status.find({ code: 0 });
+        if (status.length <= 0) {
+            return res.status(404).json({ error: "status not found" });
+        }
+        const province = await Province.find({ code: req.body.province_code });
+        if (province.length <= 0) {
+            return res.status(404).json({ error: "province not found" });
+        }
+        const district = await District.find({ code: req.body.district_code });
+        if (district.length <= 0) {
+            return res.status(404).json({ error: "district not found" });
+        }
+        // console.log(district)
+        const new_post = new Post({
+            _id: mongoose.Types.ObjectId(),
+            title: req.body.title,
+            host_id: host_id,
+            post_type_id: req.body.post_type_id,
+            province_id: province[0]._id,
+            district_id: district[0]._id,
+            status_id: status[0]._id, //tao bai post lan` dau thi mac dịnh status = 0
+            price: req.body.price,
+            square: req.body.square,
+            address_detail: req.body.address_detail,
+            description: req.body.description,
+            created_at: new Date(),
+            // updated_at: null,
+        });
+        new_post.save((err, doc) => {
+            if (err) {
+                return res.status(500).json({ error: err });
+            }
+            res.status(201).json({
+                message: "post created",
+                post: doc,
+            });
+        });
+    } catch (err) {
+        res.status(500).json({ error: err });
+    }
+};
 
 module.exports.update_post = async (req, res, next) => {
     try {
