@@ -43,7 +43,8 @@ exports.feedbacks_get_all = (req, res, next) => {
 };
 
 exports.feedbacks_create_feedback = (req, res, next) => {
-  Account.findById(req.body.accountId)
+  const accountId = req.userData.accountId;
+  Account.findById(accountId)
     .then((account) => {
       if (!account) {
         return res.status(404).json({
@@ -53,11 +54,11 @@ exports.feedbacks_create_feedback = (req, res, next) => {
       }
       const feedback = new Feedback({
         _id: mongoose.Types.ObjectId(),
-        account: req.body.accountId,
+        account: accountId,
         description: req.body.description,
         // status: req.body.status,
         created_at: new Date(),
-        created_by: req.body.accountId,
+        created_by: accountId,
         updated_at: null,
         update_by: null,
       });
