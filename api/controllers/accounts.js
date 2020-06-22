@@ -145,9 +145,9 @@ exports.account_login = (req, res, next) => {
     .exec()
     .then((account) => {
       if (account.length < 1) {
-        return res.status(404).json({
+        return res.status(403).json({
           success: false,
-          message: "Username does not exists",
+          message: "Username does not exist",
         });
       }
       if (account[0].status == true) {
@@ -175,12 +175,13 @@ exports.account_login = (req, res, next) => {
               return res.status(200).json({
                 success: true,
                 message: "Auth successful",
+                _id: account[0]._id,
                 token: token,
               });
             }
-            res.status(404).json({
+            res.status(403).json({
               success: false,
-              message: "Wrong password",
+              message: "Password is wrong",
             });
           }
         );
@@ -205,7 +206,7 @@ exports.accounts_update_account = (req, res, next) => {
   const updateOps = {};
   for (const [key, value] of Object.entries(req.body)) {
     updateOps[key] = value;
-}
+  }
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;
   Account.update({ _id: id }, { $set: updateOps })
@@ -331,7 +332,7 @@ exports.accounts_update_account_status = (req, res, next) => {
 exports.accounts_update_account_avatar = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {
-    avatar: req.file.path.split("\\")[1],
+    avatar: req.file.originalname,
   };
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;
