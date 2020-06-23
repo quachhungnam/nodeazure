@@ -97,6 +97,8 @@ module.exports.add_post_new = async (req, res, next) => {
         const new_post = new Post({
             _id: mongoose.Types.ObjectId(),
             host_id: host_id,
+            province_id: province[0]._id,
+            district_id: district[0]._id,
             status_id: status[0]._id, //tao bai post lan` dau thi mac dịnh status = 0
             created_at: new Date(),
             // updated_at: null,
@@ -223,7 +225,7 @@ module.exports.update_post_status = async (req, res, next) => {
             }
             ///xoa transaction khi doi status_code khac 2
             if (updateOps.status_code != 2 && post.status_id.code == 2) {
-                Transaction.deleteOne({ post_id: id })
+                Transaction.deleteOne({ post_id: post_id })
                     .exec()
                     .then(() => { })
                     .catch((err) => {
