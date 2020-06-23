@@ -145,7 +145,7 @@ exports.account_login = (req, res, next) => {
     .exec()
     .then((account) => {
       if (account.length < 1) {
-        return res.status(403).json({
+        return res.status(409).json({
           success: false,
           message: "Username does not exist",
         });
@@ -179,14 +179,14 @@ exports.account_login = (req, res, next) => {
                 token: token,
               });
             }
-            res.status(403).json({
+            res.status(409).json({
               success: false,
               message: "Password is wrong",
             });
           }
         );
       } else {
-        res.status(403).json({
+        res.status(409).json({
           success: false,
           message: "This account was locked",
         });
