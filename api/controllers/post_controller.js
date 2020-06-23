@@ -157,8 +157,8 @@ module.exports.update_post = async (req, res, next) => {
             if (status.length <= 0) {
                 return res.status(404).json({ error: "status not found" });
             }
-            if (updateOps.status_code != 2 && post.status_id.code == 2) {
-                Transaction.deleteOne({ post_id: id })
+            if (updateOps.status_code != 2) {
+                Transaction.deleteOne({ post_id: post_id })
                     .exec()
                     .then(() => { })
                     .catch((err) => {
@@ -218,13 +218,18 @@ module.exports.update_post_status = async (req, res, next) => {
         for (const [key, value] of Object.entries(req.body)) {
             updateOps[key] = value;
         }
+        console.log('hhh')
         if (updateOps.status_code) {
             const status = await Status.find({ code: updateOps.status_code });
             if (status.length <= 0) {
                 return res.status(404).json({ error: "status not found" });
             }
+            //get status co code = 2
+            const status_id_old = await Status.find({ code: 2 });
+
             ///xoa transaction khi doi status_code khac 2
-            if (updateOps.status_code != 2 && post.status_id.code == 2) {
+            // console.log("stautus_id= " + status_id_old[0]._id)
+            if (updateOps.status_code != 2) {
                 Transaction.deleteOne({ post_id: post_id })
                     .exec()
                     .then(() => { })
@@ -235,6 +240,7 @@ module.exports.update_post_status = async (req, res, next) => {
             updateOps.status_id = status[0]._id;
             delete updateOps.status_code; //xoa truong status_code trong updateOps
         }
+
 
         updateOps.updated_at = new Date();
         Post.updateMany({ _id: post_id }, { $set: updateOps })
