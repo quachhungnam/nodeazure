@@ -65,6 +65,7 @@ module.exports.add_post = async (req, res, next) => {
 };
 
 module.exports.add_post_new = async (req, res, next) => {
+    console.log(req.body)
     let post_json = {}
     for (const [key, value] of Object.entries(req.body)) {
         post_json = await JSON.parse(value)
@@ -154,6 +155,14 @@ module.exports.update_post = async (req, res, next) => {
             if (status.length <= 0) {
                 return res.status(404).json({ error: "status not found" });
             }
+            if (updateOps.status_code != 2 && post.status_id.code == 2) {
+                Transaction.deleteOne({ post_id: id })
+                    .exec()
+                    .then(() => { })
+                    .catch((err) => {
+                        return res.status(500).json({ error: err });
+                    });
+            }
             updateOps.status_id = status[0]._id;
             delete updateOps.status_code; //xoa truong status_code trong updateOps
         }
@@ -212,6 +221,15 @@ module.exports.update_post_status = async (req, res, next) => {
             if (status.length <= 0) {
                 return res.status(404).json({ error: "status not found" });
             }
+            ///xoa transaction khi doi status_code khac 2
+            if (updateOps.status_code != 2 && post.status_id.code == 2) {
+                Transaction.deleteOne({ post_id: id })
+                    .exec()
+                    .then(() => { })
+                    .catch((err) => {
+                        return res.status(500).json({ error: err });
+                    });
+            }
             updateOps.status_id = status[0]._id;
             delete updateOps.status_code; //xoa truong status_code trong updateOps
         }
@@ -234,7 +252,7 @@ module.exports.update_post_status = async (req, res, next) => {
 
 module.exports.delete_post = async (req, res, next) => {
     try {
-    
+
         const id = req.params.postId;
         const post = await Post.findById(id);
         if (!post) {
@@ -248,18 +266,18 @@ module.exports.delete_post = async (req, res, next) => {
         }
         //xoa post cung dong thoi xoa transaction, xoa rate cua post do
         //xoa cac danh gia cua nguoi dung
-        Rate.deleteMany({ post: id })
+        Rate.deleteMany({ post_id: id })
             .exec()
             .then((result) => { })
             .catch((err) => {
-                res.status(500).json({ error: err });
+                return res.status(500).json({ error: err });
             });
         //xoa luon hop dong` dang ky lien quan toi post
-        Transaction.deleteOne({ post: id })
+        Transaction.deleteOne({ post_id: id })
             .exec()
             .then(() => { })
             .catch((err) => {
-                res.status(500).json({ error: err });
+                return res.status(500).json({ error: err });
             });
 
         Post.deleteOne({ _id: id })
