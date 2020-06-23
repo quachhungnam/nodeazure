@@ -359,7 +359,9 @@ module.exports.get_all_post = async (req, res, next) => {
 };
 module.exports.get_all_post_with_page = async (req, res, next) => {
     try {
-        const posts = await Post.find()
+        const status_code = await req.params.code;
+        const status = await Status.find({ code: status_code });
+        const post = await Post.find({ status_id: status[0]._id })
             .sort({ created_at: "desc" }) //thoi gian tao gan nhat thi o dau
             .populate({ path: "host_id", select: "name username email mobile" })
             .populate({ path: "post_type_id", select: "name description" })
@@ -375,12 +377,12 @@ module.exports.get_all_post_with_page = async (req, res, next) => {
         //     })
         // }
         result = {
-            count: posts.length,
-            post: posts,
+            count: post.length,
+            post: post,
         };
         // if (req.params.pageNumber) {
         const at_page = await parseInt(req.params.pageNumber) || 1
-        result = paging(posts, at_page, 10)
+        result = paging(post, at_page, 10)
         if (result.error) {
             return res.status(500).json({
                 error: result.error,
