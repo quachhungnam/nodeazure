@@ -1,12 +1,11 @@
 const mongoose = require("mongoose");
-
+const fs = require('fs');
 const Post = require("../models/posts/post_model");
 const Province = require("../models/province");
 const Status = require("../models/posts/status_model");
 const District = require("../models/district");
 const Post_type = require("../models/posts/post_type_model");
 const Account = require("../models/account");
-// const User = require('../models/user')
 const Rate = require("../models/posts/rate_model");
 const Transaction = require("../models/posts/transaction_model");
 
@@ -64,8 +63,12 @@ module.exports.add_post = async (req, res, next) => {
         res.status(500).json({ error: err });
     }
 };
+
 module.exports.add_post_new = async (req, res, next) => {
-    // console.log(req.body)
+    let post_json = {}
+    for (const [key, value] of Object.entries(req.body)) {
+        post_json = await JSON.parse(value)
+    }
     try {
         //get ID_account trong token va kiem tra
         const host_id = req.userData.accountId;
@@ -73,7 +76,7 @@ module.exports.add_post_new = async (req, res, next) => {
         if (!account) {
             return res.status(404).json({ error: "account not found" });
         }
-        const post_type = await Post_type.findById(req.body.post_type_id);
+        const post_type = await Post_type.findById(post_json.post_type_id);
         if (!post_type) {
             return res.status(404).json({ error: "post type not found" });
         }
@@ -82,30 +85,28 @@ module.exports.add_post_new = async (req, res, next) => {
         if (status.length <= 0) {
             return res.status(404).json({ error: "status not found" });
         }
-        const province = await Province.find({ code: req.body.province_code });
+        const province = await Province.find({ code: post_json.province_code });
         if (province.length <= 0) {
             return res.status(404).json({ error: "province not found" });
         }
-        const district = await District.find({ code: req.body.district_code });
+        const district = await District.find({ code: post_json.district_code });
         if (district.length <= 0) {
             return res.status(404).json({ error: "district not found" });
         }
-        // console.log(district)
         const new_post = new Post({
             _id: mongoose.Types.ObjectId(),
-            title: req.body.title,
             host_id: host_id,
-            post_type_id: req.body.post_type_id,
-            province_id: province[0]._id,
-            district_id: district[0]._id,
             status_id: status[0]._id, //tao bai post lan` dau thi mac dịnh status = 0
-            price: req.body.price,
-            square: req.body.square,
-            address_detail: req.body.address_detail,
-            description: req.body.description,
             created_at: new Date(),
             // updated_at: null,
         });
+        Object.assign(new_post, post_json)
+
+        for (i = 0; i < req.files.length; i++) {
+            let image = { _id: mongoose.Types.ObjectId(), path: req.files[i].path.replace('\\', '/') }
+            new_post.post_image.push(image)
+        }
+
         new_post.save((err, doc) => {
             if (err) {
                 return res.status(500).json({ error: err });
@@ -233,11 +234,17 @@ module.exports.update_post_status = async (req, res, next) => {
 
 module.exports.delete_post = async (req, res, next) => {
     try {
-        // const accountID = req.userData.accountId
+    
         const id = req.params.postId;
         const post = await Post.findById(id);
         if (!post) {
             return res.status(404).json({ error: "post not found" });
+        }
+        if (post) {
+            for (i = 0; i < post.post_image.length; i++) {
+                //xoa toan bo anh trong server
+                fs.unlink(post.post_image[i].path, function () { })
+            }
         }
         //xoa post cung dong thoi xoa transaction, xoa rate cua post do
         //xoa cac danh gia cua nguoi dung

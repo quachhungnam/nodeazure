@@ -405,7 +405,7 @@ exports.get_account_from_token = (req, res, next) => {
     .catch((err) => {
       console.log(err);
       res.status(500).json({
-        success: false,
+        success: false, 
         error: err,
       });
     });
