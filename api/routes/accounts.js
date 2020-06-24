@@ -32,7 +32,7 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-router.get("/", checkAuth, AccountController.accounts_get_all);
+router.get("/", AccountController.accounts_get_all);
 
 router.get("/:accountId", checkAuth, AccountController.accounts_get_account);
 

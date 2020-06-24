@@ -7,6 +7,7 @@ const User = require("../models/user");
 
 exports.accounts_get_all = (req, res, next) => {
   Account.find()
+    .populate({ path: "idRole", select: "name _id" })
     .select(
       "_id username password status name email avatar mobile address created_at created_by updated_at updated_by"
     )
@@ -113,6 +114,7 @@ exports.account_signup = (req, res, next) => {
               email: req.body.email,
               mobile: req.body.mobile,
               address: req.body.address,
+              idRole: new mongoose.Types.ObjectId('5eeff606fd30b42ca0d836e3'),
               created_at: new Date(),
               created_by: accountId,
               updated_at: null,

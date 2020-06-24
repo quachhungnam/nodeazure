@@ -38,6 +38,9 @@ const accountSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  idRole: {
+    type: mongoose.Schema.Types.ObjectId, ref: 'Role'
+  },
   created_at: {
     type: Date,
   },
