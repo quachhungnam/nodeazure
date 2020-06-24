@@ -145,7 +145,7 @@ module.exports.update_post = async (req, res, next) => {
         for (const [key, value] of Object.entries(req.body)) {
             post_json = await JSON.parse(value)
         }
-        // console.log(post_json)
+        // console.log("post truoc--" + JSON.stringify(post_json))
         const post_id = req.params.postId;
         const post = await Post.findById(post_id);
         if (!post) {
@@ -217,9 +217,10 @@ module.exports.update_post = async (req, res, next) => {
         if (req.files) {
             for (i = 0; i < req.files.length; i++) {
                 let image = { _id: mongoose.Types.ObjectId(), path: req.files[i].path.replace('\\', '/') }
-                post_json.post_image.push(image)
+                updateOps.post_image.push(image)
             }
         }
+        // console.log("post sau--" + JSON.stringify(updateOps))
 
         updateOps.updated_at = new Date();
         Post.updateMany({ _id: post_id }, { $set: updateOps })
