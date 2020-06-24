@@ -17,7 +17,7 @@ module.exports.add_rate = async (req, res, next) => {
         if (!post) {
             return res.status(404).json({ error: 'post does not exist' })
         }
-        const rate = await Rate.find({ account: account_id, post: post_id })
+        const rate = await Rate.find({ account_id: account_id, post_id: post_id })
         if (rate.length > 0) {
             return res.status(409).json({ error: 'you must choose again your rate!' })
         }

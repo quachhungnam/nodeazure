@@ -9,6 +9,7 @@ router.patch('/:transactionId', check_auth, transaction_controller.update_transa
 router.delete('/:transactionId', check_auth, transaction_controller.delete_transaction)
 
 router.get('/', transaction_controller.get_all_transaction)
+router.get('/account/all', check_auth, transaction_controller.get_all_transaction_account)
 router.get('/:transactionId', transaction_controller.get_a_transaction)
 
 module.exports = router

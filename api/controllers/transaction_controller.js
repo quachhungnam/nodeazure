@@ -181,6 +181,40 @@ module.exports.get_all_transaction = async (req, res, next) => {
     });
   }
 };
+module.exports.get_all_transaction_account = async (req, res, next) => {
+  try {
+    const client_id = req.userData.accountId;
+    const account = await Account.findById(client_id);
+    if (!account) {
+      return res.status(404).json({ error: "account not found" });
+    }
+    const transaction = await Transaction.find({ client_id: client_id })
+      .populate({
+        path: "post_id",
+        select:
+          "title price status_id host_id post_type_id district_id province_id",
+        populate: {
+          path: "status_id host_id post_type_id district_id province_id",
+          select: "username name code description name_with_type",
+        },
+      })
+      .populate({ path: "client_id", select: "username name" });
+
+    if (transaction.length <= 0) {
+      return res.status(404).json({
+        error: "transaction is empty",
+      });
+    }
+    res.status(200).json({
+      count: transaction.length,
+      transaction: transaction,
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err,
+    });
+  }
+};
 
 async function change_status_post(post_id, new_status_code) {
   try {
