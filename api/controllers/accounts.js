@@ -89,6 +89,62 @@ exports.accounts_get_account = (req, res, next) => {
     });
 };
 
+exports.account_create_account = (req, res, next) => {
+  Account.find({ username: req.body.username })
+    .exec()
+    .then((account) => {
+      // user array
+      if (account.length >= 1) {
+        return res.status(409).json({
+          success: false,
+          message: "Username exists",
+        });
+      } else {
+        bcrypt.hash(req.body.password, 10, (err, hash) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              error: err,
+            });
+          } else {
+            var accountId = new mongoose.Types.ObjectId();
+            const account = new Account({
+              _id: accountId,
+              username: req.body.username,
+              password: hash,
+              status: req.body.status,
+              name: req.body.name,
+              email: req.body.email,
+              mobile: req.body.mobile,
+              address: req.body.address,
+              idRole: req.body.idRole,
+              created_at: new Date(),
+              created_by: accountId,
+              updated_at: null,
+              update_by: null,
+            });
+            account
+              .save()
+              .then((result) => {
+                console.log(result);
+                res.status(201).json({
+                  success: true,
+                  message: "Account created",
+                });
+              })
+              .catch((err) => {
+                console.log(err);
+                res.status(500).json({
+                  success: false,
+                  error: err,
+                });
+              });
+          }
+        });
+      }
+    });
+};
+
 exports.account_signup = (req, res, next) => {
   Account.find({ username: req.body.username })
     .exec()

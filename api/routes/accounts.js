@@ -38,6 +38,8 @@ router.get("/:accountId", checkAuth, AccountController.accounts_get_account);
 
 router.post("/signup", AccountController.account_signup);
 
+router.post("/create", AccountController.account_create_account);
+
 router.post("/login", AccountController.account_login);
 
 router.post(
