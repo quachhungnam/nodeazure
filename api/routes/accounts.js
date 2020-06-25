@@ -11,7 +11,7 @@ const storage = multer.diskStorage({
     cb(null, "./uploads/");
   },
   filename: (req, file, cb) => {
-    cb(null, file.originalname);
+    cb(null, `${file.originalname}`);
   },
 });
 
@@ -32,11 +32,13 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-router.get("/", checkAuth, AccountController.accounts_get_all);
+router.get("/", AccountController.accounts_get_all);
 
 router.get("/:accountId", checkAuth, AccountController.accounts_get_account);
 
 router.post("/signup", AccountController.account_signup);
+
+router.post("/create", AccountController.account_create_account);
 
 router.post("/login", AccountController.account_login);
 

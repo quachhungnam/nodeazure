@@ -3,10 +3,14 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const Account = require("../models/account");
-const User = require("../models/user");
+const Rate = require("../models/posts/rate_model");
+const Post = require("../models/posts/post_model");
+const Transaction = require("../models/posts/transaction_model");
+const Feedback = require("../models/feedback");
 
 exports.accounts_get_all = (req, res, next) => {
   Account.find()
+    .populate({ path: "idRole", select: "name _id" })
     .select(
       "_id username password status name email avatar mobile address created_at created_by updated_at updated_by"
     )
@@ -85,6 +89,62 @@ exports.accounts_get_account = (req, res, next) => {
     });
 };
 
+exports.account_create_account = (req, res, next) => {
+  Account.find({ username: req.body.username })
+    .exec()
+    .then((account) => {
+      // user array
+      if (account.length >= 1) {
+        return res.status(409).json({
+          success: false,
+          message: "Username exists",
+        });
+      } else {
+        bcrypt.hash(req.body.password, 10, (err, hash) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              error: err,
+            });
+          } else {
+            var accountId = new mongoose.Types.ObjectId();
+            const account = new Account({
+              _id: accountId,
+              username: req.body.username,
+              password: hash,
+              status: req.body.status,
+              name: req.body.name,
+              email: req.body.email,
+              mobile: req.body.mobile,
+              address: req.body.address,
+              idRole: req.body.idRole,
+              created_at: new Date(),
+              created_by: accountId,
+              updated_at: null,
+              update_by: null,
+            });
+            account
+              .save()
+              .then((result) => {
+                console.log(result);
+                res.status(201).json({
+                  success: true,
+                  message: "Account created",
+                });
+              })
+              .catch((err) => {
+                console.log(err);
+                res.status(500).json({
+                  success: false,
+                  error: err,
+                });
+              });
+          }
+        });
+      }
+    });
+};
+
 exports.account_signup = (req, res, next) => {
   Account.find({ username: req.body.username })
     .exec()
@@ -113,6 +173,7 @@ exports.account_signup = (req, res, next) => {
               email: req.body.email,
               mobile: req.body.mobile,
               address: req.body.address,
+              idRole: new mongoose.Types.ObjectId("5eeff606fd30b42ca0d836e3"),
               created_at: new Date(),
               created_by: accountId,
               updated_at: null,
@@ -145,7 +206,7 @@ exports.account_login = (req, res, next) => {
     .exec()
     .then((account) => {
       if (account.length < 1) {
-        return res.status(403).json({
+        return res.status(409).json({
           success: false,
           message: "Username does not exist",
         });
@@ -179,14 +240,14 @@ exports.account_login = (req, res, next) => {
                 token: token,
               });
             }
-            res.status(403).json({
+            res.status(409).json({
               success: false,
               message: "Password is wrong",
             });
           }
         );
       } else {
-        res.status(403).json({
+        res.status(409).json({
           success: false,
           message: "This account was locked",
         });
@@ -332,7 +393,7 @@ exports.accounts_update_account_status = (req, res, next) => {
 exports.accounts_update_account_avatar = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {
-    avatar: req.file.originalname,
+    avatar: `uploads/${req.file.originalname}`,
   };
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;
@@ -357,7 +418,7 @@ exports.accounts_update_account_avatar = (req, res, next) => {
     });
 };
 
-exports.accounts_delete_account = (req, res, next) => {
+exports.accounts_delete_account = async (req, res, next) => {
   const id = req.params.accountId;
   Account.remove({ _id: id })
     .exec()
@@ -374,10 +435,45 @@ exports.accounts_delete_account = (req, res, next) => {
         error: err,
       });
     });
+
+  // xoa nhung cai lien quan
+
+  Feedback.deleteMany({ account: id })
+    .exec()
+    .then(() => {})
+    .catch((err) => {
+      res.status(500).json({ error: err });
+    });
+
+  const post = await Post.find({ host_id: id });
+  if (!post) {
+    return res.status(404).json({ error: "post not found" });
+  }
+  for (let i = 0; i < post.length; i++) {
+    Rate.deleteOne({ post_id: post[i]._id })
+      .exec()
+      .then((result) => {})
+      .catch((err) => {
+        res.status(500).json({ error: err });
+      });
+    Transaction.deleteOne({ post_id: post[i]._id })
+      .exec()
+      .then(() => {})
+      .catch((err) => {
+        res.status(500).json({ error: err });
+      });
+  }
+
+  Post.deleteMany({ host_id: id })
+    .exec()
+    .then(() => {})
+    .catch((err) => {
+      res.status(500).json({ error: err });
+    });
 };
 
 exports.get_account_from_token = (req, res, next) => {
-  const id = req.userData.accountId
+  const id = req.userData.accountId;
   Account.findById(id)
     .select(
       "_id username password status name email avatar mobile address created_at created_by updated_at updated_by"
@@ -405,7 +501,7 @@ exports.get_account_from_token = (req, res, next) => {
     .catch((err) => {
       console.log(err);
       res.status(500).json({
-        success: false, 
+        success: false,
         error: err,
       });
     });

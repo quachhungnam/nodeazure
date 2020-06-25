@@ -28,7 +28,7 @@ const accountSchema = mongoose.Schema({
   avatar: {
     type: String,
     default:
-      "https://cdn.iconscout.com/icon/free/png-512/avatar-372-456324.png",
+      "uploads/avatar.png",
   },
   mobile: {
     type: String,
@@ -37,6 +37,9 @@ const accountSchema = mongoose.Schema({
   address: {
     type: String,
     required: true,
+  },
+  idRole: {
+    type: mongoose.Schema.Types.ObjectId, ref: 'Role'
   },
   created_at: {
     type: Date,
