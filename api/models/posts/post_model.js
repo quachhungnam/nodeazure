@@ -14,7 +14,7 @@ const post_schema = mongoose.Schema({
     description: { type: String, default: '' },
     created_at: { type: Date, default: new Date() },
     updated_at: { type: Date, default: null },
-    post_image: [{ _id: mongoose.Schema.Types.ObjectId, path: { type: String } }]
+    post_image: { type: [{ _id: mongoose.Schema.Types.ObjectId, path: { type: String } }], default: [] }
 })
 
 module.exports = mongoose.model('Post', post_schema)
