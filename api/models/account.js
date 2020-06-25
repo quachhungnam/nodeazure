@@ -27,8 +27,7 @@ const accountSchema = mongoose.Schema({
   },
   avatar: {
     type: String,
-    default:
-      "uploads/avatar.png",
+    default: "uploads/avatar.png",
   },
   mobile: {
     type: String,
@@ -39,7 +38,8 @@ const accountSchema = mongoose.Schema({
     required: true,
   },
   idRole: {
-    type: mongoose.Schema.Types.ObjectId, ref: 'Role'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Role",
   },
   created_at: {
     type: Date,
