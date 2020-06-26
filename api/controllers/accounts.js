@@ -393,7 +393,7 @@ exports.accounts_update_account_status = (req, res, next) => {
 exports.accounts_update_account_avatar = (req, res, next) => {
   const id = req.params.accountId;
   const updateOps = {
-    avatar: `uploads/${req.file.originalname}`,
+    avatar: req.files[0].path.replace("\\", "/"),
   };
   updateOps.updated_at = new Date();
   updateOps.updated_by = id;
