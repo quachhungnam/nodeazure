@@ -545,7 +545,7 @@ module.exports.get_all_post_with_address = async (req, res, next) => {
     try {
         option = {};
         if (req.body.address) {
-            option.address_detail = { $regex: ".*" + req.body.address + ".*" };
+            option.address_detail = { $regex: `.*${req.body.address}.*`, $options: "i" }
         }
         const post = await Post.find(option)
             .populate({ path: "host_id", select: "name mobile" })
